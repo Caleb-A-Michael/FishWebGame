@@ -1,43 +1,70 @@
 import { mouseX, mouseY } from "../core/input.js";
 
 // Pond boundaries (proportional to canvas size)
-const POND_X = 0.2;
-const POND_Y = 0.2;
-const POND_W = 0.6;
-const POND_H = 0.6;
+const POND_BOUNDARY = [
+    { x: 80, y: 140 },
+    { x: 160, y: 100 },
+    { x: 280, y: 80 },
+    { x: 400, y: 90 },
+    { x: 500, y: 120 },
+    { x: 560, y: 170 },
+    { x: 540, y: 230 },
+    { x: 460, y: 278 },
+    { x: 343, y: 290 },
+    { x: 200, y: 280 },
+    { x: 100, y: 250 },
+    { x: 60, y: 200 }
+];
 
 // Lure placement (in pixels)
 const MAX_CAST_DISTANCE = 60;
 const TARGET_LURE_RADIUS = 5;
 const ACTUAL_LURE_RADIUS = 7;
 
-function isInPond(x, y, canvas) {
-    const leftEdge = canvas.width * POND_X;
-    const rightEdge = leftEdge + (canvas.width * POND_W);
-    const topEdge = canvas.height * POND_Y;
-    const bottomEdge = topEdge + (canvas.height * POND_H);
+function isInPond(x, y) {
+    let inside = false;
+    for (let i = 0, j = POND_BOUNDARY.length - 1; i < POND_BOUNDARY.length; i++) {
+        const xi = POND_BOUNDARY[i].x;
+        const yi = POND_BOUNDARY[i].y;
+        const xj = POND_BOUNDARY[j].x;
+        const yj = POND_BOUNDARY[j].y;
 
-    return x > leftEdge && x < rightEdge && y > topEdge && y < bottomEdge;
+        const intersects = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+        if (intersects) inside = !inside;
+
+        j = i;
+    }
+    return inside;
 }
 
-function getNearestShorePoint(x, y, canvas) {
-    const leftEdge = canvas.width * POND_X;
-    const distToLeftEdge = x - leftEdge;
+function getNearestShorePoint(x, y) {
+    let nearestPoint = null;
+    let nearestDist = Infinity;
 
-    const rightEdge = leftEdge + (canvas.width * POND_W);
-    const distToRightEdge = rightEdge - x;
+    for (let i = 0, j = POND_BOUNDARY.length - 1; i < POND_BOUNDARY.length; i++) {
+        const xi = POND_BOUNDARY[i].x;
+        const yi = POND_BOUNDARY[i].y;
+        const xj = POND_BOUNDARY[j].x;
+        const yj = POND_BOUNDARY[j].y;
 
-    const topEdge = canvas.height * POND_Y;
-    const distToTopEdge = y - topEdge;
+        const dx = xi - xj;
+        const dy = yi - yj;
+        const edgeLengthSq = dx * dx + dy * dy;
+        const t = Math.max(0, Math.min(1, ((x - xj) * dx + (y - yj) * dy) / edgeLengthSq)); 
 
-    const bottomEdge = topEdge + (canvas.height * POND_H);
-    const distToBottomEdge = bottomEdge - y;
+        const closestX = xj + t * dx;
+        const closestY = yj + t * dy;
+        const dist = Math.sqrt((x - closestX) ** 2 + (y - closestY) ** 2);
 
-    const minDist = Math.min(distToLeftEdge, distToRightEdge, distToTopEdge, distToBottomEdge);
-    if (minDist === distToLeftEdge) return { x: leftEdge, y };
-    if (minDist === distToRightEdge) return { x: rightEdge, y };
-    if (minDist === distToTopEdge) return { x, y: topEdge };
-    return { x, y: bottomEdge };
+        if (dist < nearestDist) {
+            nearestDist = dist;
+            nearestPoint = { x: closestX, y: closestY};
+        }
+
+        j = i;
+    }
+
+    return nearestPoint;
 }
 
 export const fishingScene = {
@@ -46,27 +73,33 @@ export const fishingScene = {
     },
 
     draw(ctx) {
-        // === POND ===
+        // === ENVIORMENT ===
         // Shore
         ctx.fillStyle = "#78ab46";
         ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
         // Water
         ctx.fillStyle = "#4a90d9";
-        ctx.fillRect(ctx.canvas.width * POND_X, ctx.canvas.height * POND_Y, ctx.canvas.width * POND_W, ctx.canvas.height * POND_H);
+        ctx.beginPath();
+        ctx.moveTo(POND_BOUNDARY[0].x, POND_BOUNDARY[0].y);
+        for (let i = 0; i < POND_BOUNDARY.length; i++) {
+            ctx.lineTo(POND_BOUNDARY[i].x, POND_BOUNDARY[i].y);
+        }
+        ctx.closePath();
+        ctx.fill();
 
         // === LURE PLACEMENT ===
         // Target lure
         ctx.beginPath();
         ctx.arc(mouseX, mouseY, TARGET_LURE_RADIUS, 0, Math.PI * 2);
-        ctx.fillStyle = isInPond(mouseX, mouseY, ctx.canvas) ? "#ffffff" : "#ff0000"
+        ctx.fillStyle = isInPond(mouseX, mouseY) ? "#ffffff" : "#ff0000"
         ctx.fill();
 
         // Valid placement
-        if (isInPond(mouseX, mouseY, ctx.canvas)) {
+        if (isInPond(mouseX, mouseY)) {
             let lureX = mouseX;
             let lureY = mouseY;
-            const shorePoint = getNearestShorePoint(mouseX, mouseY, ctx.canvas);
+            const shorePoint = getNearestShorePoint(mouseX, mouseY);
             const dist = Math.sqrt((mouseX - shorePoint.x) ** 2 + (mouseY - shorePoint.y) ** 2);
             if (dist > MAX_CAST_DISTANCE) {
                 const dx = mouseX - shorePoint.x;
