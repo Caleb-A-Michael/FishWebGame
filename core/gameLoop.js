@@ -7,8 +7,8 @@ export function startGameLoop(ctx) {
 
         update();
         draw(ctx);
-
         resetInput();
+        
         requestAnimationFrame(gameLoop);
     }
     requestAnimationFrame(gameLoop);

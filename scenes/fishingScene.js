@@ -1,6 +1,6 @@
 import { mouseX, mouseY, mouseClicked } from "../core/input.js";
 
-// Pond boundaries (proportional to canvas size)
+// Pond boundaries (pixel cords)
 const POND_BOUNDARY = [
     { x: 80, y: 140 },
     { x: 160, y: 100 },
@@ -55,7 +55,7 @@ function getNearestShorePoint(x, y) {
         const dx = xi - xj;
         const dy = yi - yj;
         const edgeLengthSq = dx * dx + dy * dy;
-        const t = Math.max(0, Math.min(1, ((x - xj) * dx + (y - yj) * dy) / edgeLengthSq)); 
+        const t = Math.max(0, Math.min(1, ((x - xj) * dx + (y - yj) * dy) / edgeLengthSq));
 
         const closestX = xj + t * dx;
         const closestY = yj + t * dy;
@@ -89,6 +89,8 @@ function updateLurePlacement() {
 
 export const fishingScene = {
     update() {
+        isMouseInPond = isInPond(mouseX, mouseY);
+
         if (lurePlaced) {
             if (mouseClicked) {
                 lurePlaced = false;
@@ -96,7 +98,6 @@ export const fishingScene = {
             return;
         }
 
-        isMouseInPond = isInPond(mouseX, mouseY);
         if (isMouseInPond) {
             updateLurePlacement();
 
@@ -107,7 +108,7 @@ export const fishingScene = {
     },
 
     draw(ctx) {
-        // === ENVIORMENT ===
+        // === ENVIRONMENT ===
         // Shore
         ctx.fillStyle = "#78ab46";
         ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -126,7 +127,7 @@ export const fishingScene = {
         // Cursor dot
         ctx.beginPath();
         ctx.arc(mouseX, mouseY, TARGET_LURE_RADIUS, 0, Math.PI * 2);
-        ctx.fillStyle = isMouseInPond ? "#ffffff" : "#ff0000";
+        ctx.fillStyle = isMouseInPond || lurePlaced ? "#ffffff" : "#ff0000";
         ctx.fill();
 
         if (isMouseInPond || lurePlaced) {
@@ -148,4 +149,4 @@ export const fishingScene = {
             ctx.stroke();
         }
     }
-}
+};
