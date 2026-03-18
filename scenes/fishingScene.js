@@ -1,4 +1,4 @@
-import { mouseX, mouseY } from "../core/input.js";
+import { mouseX, mouseY, mouseClicked } from "../core/input.js";
 
 // Pond boundaries (proportional to canvas size)
 const POND_BOUNDARY = [
@@ -20,6 +20,11 @@ const POND_BOUNDARY = [
 const MAX_CAST_DISTANCE = 60;
 const TARGET_LURE_RADIUS = 5;
 const ACTUAL_LURE_RADIUS = 7;
+
+let lurePlaced = false;
+let lurePos = { x: 0, y: 0 };
+let closestPointOnShore = null;
+let isMouseInPond = false;
 
 function isInPond(x, y) {
     let inside = false;
@@ -67,9 +72,38 @@ function getNearestShorePoint(x, y) {
     return nearestPoint;
 }
 
+function updateLurePlacement() {
+    closestPointOnShore = getNearestShorePoint(mouseX, mouseY);
+    const dist = Math.sqrt((mouseX - closestPointOnShore.x) ** 2 + (mouseY - closestPointOnShore.y) ** 2);
+
+    if (dist > MAX_CAST_DISTANCE) {
+        const dx = mouseX - closestPointOnShore.x;
+        const dy = mouseY - closestPointOnShore.y;
+        lurePos.x = closestPointOnShore.x + (dx / dist) * MAX_CAST_DISTANCE;
+        lurePos.y = closestPointOnShore.y + (dy / dist) * MAX_CAST_DISTANCE;
+    } else {
+        lurePos.x = mouseX;
+        lurePos.y = mouseY;
+    }
+}
+
 export const fishingScene = {
     update() {
+        if (lurePlaced) {
+            if (mouseClicked) {
+                lurePlaced = false;
+            }
+            return;
+        }
 
+        isMouseInPond = isInPond(mouseX, mouseY);
+        if (isMouseInPond) {
+            updateLurePlacement();
+
+            if (mouseClicked) {
+                lurePlaced = true;
+            }
+        }
     },
 
     draw(ctx) {
@@ -82,48 +116,36 @@ export const fishingScene = {
         ctx.fillStyle = "#4a90d9";
         ctx.beginPath();
         ctx.moveTo(POND_BOUNDARY[0].x, POND_BOUNDARY[0].y);
-        for (let i = 0; i < POND_BOUNDARY.length; i++) {
+        for (let i = 1; i < POND_BOUNDARY.length; i++) {
             ctx.lineTo(POND_BOUNDARY[i].x, POND_BOUNDARY[i].y);
         }
         ctx.closePath();
         ctx.fill();
 
         // === LURE PLACEMENT ===
-        // Target lure
+        // Cursor dot
         ctx.beginPath();
         ctx.arc(mouseX, mouseY, TARGET_LURE_RADIUS, 0, Math.PI * 2);
-        ctx.fillStyle = isInPond(mouseX, mouseY) ? "#ffffff" : "#ff0000"
+        ctx.fillStyle = isMouseInPond ? "#ffffff" : "#ff0000";
         ctx.fill();
 
-        // Valid placement
-        if (isInPond(mouseX, mouseY)) {
-            let lureX = mouseX;
-            let lureY = mouseY;
-            const shorePoint = getNearestShorePoint(mouseX, mouseY);
-            const dist = Math.sqrt((mouseX - shorePoint.x) ** 2 + (mouseY - shorePoint.y) ** 2);
-            if (dist > MAX_CAST_DISTANCE) {
-                const dx = mouseX - shorePoint.x;
-                const dy = mouseY - shorePoint.y;
-                lureX = shorePoint.x + (dx / dist) * MAX_CAST_DISTANCE;
-                lureY = shorePoint.y + (dy / dist) * MAX_CAST_DISTANCE;
-            }
-
+        if (isMouseInPond || lurePlaced) {
             // Fishing line
+            const angle = Math.atan2(closestPointOnShore.y - lurePos.y, closestPointOnShore.x - lurePos.x);
+            const lineStartX = lurePos.x + Math.cos(angle) * ACTUAL_LURE_RADIUS;
+            const lineStartY = lurePos.y + Math.sin(angle) * ACTUAL_LURE_RADIUS;
             ctx.beginPath();
-            const angle = Math.atan2(shorePoint.y - lureY, shorePoint.x - lureX);
-            const lineStartX = lureX + Math.cos(angle) * ACTUAL_LURE_RADIUS;
-            const lineStartY = lureY + Math.sin(angle) * ACTUAL_LURE_RADIUS;
-            ctx.moveTo(lineStartX, lineStartY); // Connect to outer radius of actual lure
-            ctx.lineTo(shorePoint.x, shorePoint.y);
+            ctx.moveTo(lineStartX, lineStartY);
+            ctx.lineTo(closestPointOnShore.x, closestPointOnShore.y);
             ctx.strokeStyle = "#ffffff";
             ctx.stroke();
 
-            // Actual lure preview
+            // Lure ring
             ctx.beginPath();
-            ctx.arc(lureX, lureY, ACTUAL_LURE_RADIUS, 0, Math.PI * 2);
+            ctx.arc(lurePos.x, lurePos.y, ACTUAL_LURE_RADIUS, 0, Math.PI * 2);
             ctx.strokeStyle = "#ffffff";
             ctx.lineWidth = 1;
             ctx.stroke();
         }
     }
-};
+}
