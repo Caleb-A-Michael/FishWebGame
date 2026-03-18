@@ -16,15 +16,24 @@ const POND_BOUNDARY = [
     { x: 60, y: 200 }
 ];
 
+const PLACEHOLDER_FISH = {
+    sequence: "udlrvvvvhhhhaaaa",
+    baseTime: 5,
+};
+
 // Lure placement (in pixels)
 const MAX_CAST_DISTANCE = 60;
 const TARGET_LURE_RADIUS = 5;
 const ACTUAL_LURE_RADIUS = 7;
 
-let lurePlaced = false;
+let state = "placement"
+
+let currentFish = null;
 let lurePos = { x: 0, y: 0 };
 let closestPointOnShore = null;
 let isMouseInPond = false;
+
+// === UPDATE HELPERS ===
 
 function isInPond(x, y) {
     let inside = false;
@@ -87,66 +96,112 @@ function updateLurePlacement() {
     }
 }
 
+// === DRAW HELPERS ===
+
+function drawEnvironment(ctx) {
+    // Shore
+    ctx.fillStyle = "#78ab46";
+    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+    // Water
+    ctx.fillStyle = "#4a90d9";
+    ctx.beginPath();
+    ctx.moveTo(POND_BOUNDARY[0].x, POND_BOUNDARY[0].y);
+    for (let i = 1; i < POND_BOUNDARY.length; i++) {
+        ctx.lineTo(POND_BOUNDARY[i].x, POND_BOUNDARY[i].y);
+    }
+    ctx.closePath();
+    ctx.fill();
+}
+
+function drawCursor(ctx) {
+    ctx.beginPath();
+    ctx.arc(mouseX, mouseY, TARGET_LURE_RADIUS, 0, Math.PI * 2);
+    ctx.fillStyle = !isMouseInPond && state == "placement" ? "#ff0000" : "#ffffff";
+    ctx.fill();
+}
+
+function drawFishingLine(ctx) {
+    const angle = Math.atan2(closestPointOnShore.y - lurePos.y, closestPointOnShore.x - lurePos.x);
+    const lineStartX = lurePos.x + Math.cos(angle) * ACTUAL_LURE_RADIUS;
+    const lineStartY = lurePos.y + Math.sin(angle) * ACTUAL_LURE_RADIUS;
+    ctx.beginPath();
+    ctx.moveTo(lineStartX, lineStartY);
+    ctx.lineTo(closestPointOnShore.x, closestPointOnShore.y);
+    ctx.strokeStyle = "#ffffff";
+    ctx.stroke();
+}
+
+function drawLure(ctx) {
+    ctx.beginPath();
+    ctx.arc(lurePos.x, lurePos.y, ACTUAL_LURE_RADIUS, 0, Math.PI * 2);
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+}
+
+// === STATE MACHINE HELPERS ===
+
+function startPlacement() {
+    state = "placement";
+}
+
+function startWaiting() {
+    currentFish = PLACEHOLDER_FISH;
+    state = "waiting";
+}
+
+function startMinigame() {
+    state = "minigame";
+}
+
+function startResult() {
+    state = "result";
+}
+
 export const fishingScene = {
     update() {
         isMouseInPond = isInPond(mouseX, mouseY);
 
-        if (lurePlaced) {
-            if (mouseClicked) {
-                lurePlaced = false;
-            }
-            return;
-        }
-
-        if (isMouseInPond) {
-            updateLurePlacement();
-
-            if (mouseClicked) {
-                lurePlaced = true;
-            }
+        switch (state) {
+            case "placement":
+                if (isMouseInPond) {
+                    updateLurePlacement();
+                    if (mouseClicked) startWaiting();
+                }
+                break;
+            case "waiting":
+                // TODO: make transation to waiting
+                if (mouseClicked) startPlacement();
+                break;
+            case "minigame":
+                break;
+            case "result":
+                break;
         }
     },
 
     draw(ctx) {
-        // === ENVIRONMENT ===
-        // Shore
-        ctx.fillStyle = "#78ab46";
-        ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        drawEnvironment(ctx);
 
-        // Water
-        ctx.fillStyle = "#4a90d9";
-        ctx.beginPath();
-        ctx.moveTo(POND_BOUNDARY[0].x, POND_BOUNDARY[0].y);
-        for (let i = 1; i < POND_BOUNDARY.length; i++) {
-            ctx.lineTo(POND_BOUNDARY[i].x, POND_BOUNDARY[i].y);
+        switch (state) {
+            case "placement":
+                if (isMouseInPond) {
+                drawFishingLine(ctx);
+                drawLure(ctx);
+                }
+                break;
+            case "waiting":
+                drawFishingLine(ctx);
+                drawLure(ctx);
+                break;
+            case "minigame":
+                break;
+            case "result":
+                break;
+            
         }
-        ctx.closePath();
-        ctx.fill();
 
-        // === LURE PLACEMENT ===
-        // Cursor dot
-        ctx.beginPath();
-        ctx.arc(mouseX, mouseY, TARGET_LURE_RADIUS, 0, Math.PI * 2);
-        ctx.fillStyle = isMouseInPond || lurePlaced ? "#ffffff" : "#ff0000";
-        ctx.fill();
-
-        if (isMouseInPond || lurePlaced) {
-            // Fishing line
-            const angle = Math.atan2(closestPointOnShore.y - lurePos.y, closestPointOnShore.x - lurePos.x);
-            const lineStartX = lurePos.x + Math.cos(angle) * ACTUAL_LURE_RADIUS;
-            const lineStartY = lurePos.y + Math.sin(angle) * ACTUAL_LURE_RADIUS;
-            ctx.beginPath();
-            ctx.moveTo(lineStartX, lineStartY);
-            ctx.lineTo(closestPointOnShore.x, closestPointOnShore.y);
-            ctx.strokeStyle = "#ffffff";
-            ctx.stroke();
-
-            // Lure ring
-            ctx.beginPath();
-            ctx.arc(lurePos.x, lurePos.y, ACTUAL_LURE_RADIUS, 0, Math.PI * 2);
-            ctx.strokeStyle = "#ffffff";
-            ctx.lineWidth = 1;
-            ctx.stroke();
-        }
+        drawCursor(ctx);
     }
 };
