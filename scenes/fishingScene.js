@@ -18,7 +18,7 @@ const POND_BOUNDARY = [
 
 const PLACEHOLDER_FISH = {
     sequence: "aaaaaa",
-    baseTime: 5,
+    baseTime: 3,
     name: "Redgill",
 };
 
@@ -30,6 +30,8 @@ const WAIT_TIME_MAX = 10;
 // Casting draw
 const CURSOR_RADIUS = 5;
 const LURE_RING_RADIUS = 7; 
+const BITING_FONT_SIZE = 20;
+const BITING_Y_OFFSET = 25;
 
 // Minigame draw
 const OVERLAY_OPACITY = 0.5;
@@ -56,6 +58,7 @@ let isMouseInPond = false;
 
 // Waiting
 let waitTimer = 0;
+let fishBiting = false;
 
 // Minigame
 let currentFish = null;
@@ -185,6 +188,14 @@ function drawLure(ctx) {
     ctx.stroke();
 }
 
+function drawBiting(ctx) {
+    ctx.font = `${BITING_FONT_SIZE}px 'Courier New'`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText("↑", lurePos.x, lurePos.y - BITING_Y_OFFSET);
+}
+
 function drawDarkout(ctx) {
     ctx.fillStyle = `rgba(0, 0, 0, ${OVERLAY_OPACITY})`;
     ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -253,6 +264,8 @@ function startWaiting() {
 }
 
 function startMinigame() {
+    fishBiting = false;
+
     currentFish = PLACEHOLDER_FISH;
     arrowSequence = resolveArrowSequence(currentFish.sequence);
     currentArrowIndex = 0;
@@ -280,8 +293,17 @@ export const fishingScene = {
                 }
                 break;
             case "waiting":
+                if (fishBiting) {
+                    if (mouseClicked || keyPressed === "ArrowUp") {
+                        startMinigame();
+                        break;
+                    }
+                }
+
                 waitTimer -= deltaTime;
-                if (waitTimer <= 0) startMinigame();
+                if (waitTimer <= 0) {
+                    fishBiting = true;
+                }
                 if (mouseClicked) startPlacement();
                 break;
             case "minigame":
@@ -315,8 +337,10 @@ export const fishingScene = {
                 }
                 break;
             case "waiting":
-                drawFishingLine(ctx);
                 drawLure(ctx);
+                if (fishBiting) {
+                    drawBiting(ctx);
+                }
                 break;
             case "minigame":
                 drawDarkout(ctx);
