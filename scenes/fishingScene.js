@@ -24,7 +24,8 @@ const PLACEHOLDER_FISH = {
 
 // Casting update
 const MAX_CAST_DISTANCE = 60;
-const WAIT_TIME = 3;
+const WAIT_TIME_MIN = 2;
+const WAIT_TIME_MAX = 10;
 
 // Casting draw
 const CURSOR_RADIUS = 5;
@@ -61,7 +62,7 @@ let currentFish = null;
 let arrowSequence = [];
 let currentArrowIndex = 0;
 let minigameTimer = 0;
-let isCatchSuccessful = true;
+let resultType = null; // Either timeout, wrongInput, or successful
 
 // === UPDATE HELPERS ===
 
@@ -190,11 +191,10 @@ function drawDarkout(ctx) {
 }
 
 function drawTimer(ctx, failed) {
-    const timeRemaining = (currentFish.baseTime - minigameTimer).toFixed(1);
     ctx.fillStyle = (failed) ? "#ff0000" : "#ffffff";
     ctx.textAlign = "center";
     ctx.font = `${TIMER_FONT_SIZE}px 'Courier New'`;
-    ctx.fillText(`${timeRemaining}`, ctx.canvas.width / 2, ctx.canvas.height * TIMER_Y);
+    ctx.fillText(`${Math.max(0, minigameTimer).toFixed(1)}`, ctx.canvas.width / 2, ctx.canvas.height * TIMER_Y);
 }
 
 function arrowToSymbol(arrow) {
@@ -247,7 +247,8 @@ function startPlacement() {
 }
 
 function startWaiting() {
-    waitTimer = 0;
+    // Sets wait timer to an int between min and max
+    waitTimer = Math.floor(Math.random() * (WAIT_TIME_MAX - WAIT_TIME_MIN + 1)) + WAIT_TIME_MIN;
     state = "waiting";
 }
 
@@ -256,13 +257,13 @@ function startMinigame() {
     arrowSequence = resolveArrowSequence(currentFish.sequence);
     currentArrowIndex = 0;
 
-    minigameTimer = 0;
+    minigameTimer = currentFish.baseTime;
 
     state = "minigame";
 }
 
-function startResult(successful) {
-    isCatchSuccessful = successful;
+function startResult(type) {
+    resultType = type;
 
     state = "result";
 }
@@ -279,20 +280,20 @@ export const fishingScene = {
                 }
                 break;
             case "waiting":
-                waitTimer += deltaTime;
-                if (waitTimer >= WAIT_TIME) startMinigame();
+                waitTimer -= deltaTime;
+                if (waitTimer <= 0) startMinigame();
                 if (mouseClicked) startPlacement();
                 break;
             case "minigame":
-                minigameTimer += deltaTime;
-                if (minigameTimer >= currentFish.baseTime) startResult(false);
+                minigameTimer -= deltaTime;
+                if (minigameTimer <= 0) startResult("timeout");
 
                 if (keyPressed) {
                     if (keyPressed === arrowSequence[currentArrowIndex]) {
                         currentArrowIndex++;
-                        if (currentArrowIndex >= arrowSequence.length) startResult(true);
+                        if (currentArrowIndex >= arrowSequence.length) startResult("successful");
                     } else {
-                        startResult(false);
+                        startResult("wrongInput");
                     }
                 }
                 break;
@@ -324,13 +325,13 @@ export const fishingScene = {
                 break;
             case "result":
                 drawDarkout(ctx);
-                if (isCatchSuccessful) {
+                if (resultType === "successful") {
                     drawSuccess(ctx);
                     return;
                 }
 
                 // Failure
-                if (minigameTimer >= currentFish.baseTime) {
+                if (resultType === "timeout") {
                     drawTimer(ctx, true);
                     drawArrows(ctx, false);
                 } else {
