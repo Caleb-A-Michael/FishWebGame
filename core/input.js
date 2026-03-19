@@ -2,6 +2,8 @@ export let mouseX = 0;
 export let mouseY = 0;
 export let mouseClicked = false;
 
+export let keyPressed = null;
+
 const canvas = document.getElementById("gameCanvas");
 
 canvas.addEventListener("mousemove", (event) => {
@@ -16,6 +18,11 @@ canvas.addEventListener("click", () => {
     mouseClicked = true;
 });
 
+window.addEventListener("keydown", (event) => {
+    keyPressed = event.key;
+});
+
 export function resetInput() {
     mouseClicked = false;
+    keyPressed = null;
 }

@@ -4,8 +4,8 @@ export function setScene(scene) {
     currentScene = scene;
 }
 
-export function update() {
-    if (currentScene) currentScene.update();
+export function update(deltaTime) {
+    if (currentScene) currentScene.update(deltaTime);
 }
 
 export function draw(ctx) {

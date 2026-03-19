@@ -1,4 +1,4 @@
-import { mouseX, mouseY, mouseClicked } from "../core/input.js";
+import { mouseX, mouseY, mouseClicked, keyPressed } from "../core/input.js";
 
 // Pond boundaries (pixel cords)
 const POND_BOUNDARY = [
@@ -21,13 +21,17 @@ const PLACEHOLDER_FISH = {
     baseTime: 5,
 };
 
-// Lure placement (in pixels)
+// Fishing update
 const MAX_CAST_DISTANCE = 60;
+const WAIT_TIME = 3;
+
+// Fishing draw
 const TARGET_LURE_RADIUS = 5;
-const ACTUAL_LURE_RADIUS = 7;
+const ACTUAL_LURE_RADIUS = 7; 
 
 let state = "placement"
 
+let waitTimer = 0;
 let currentFish = null;
 let lurePos = { x: 0, y: 0 };
 let closestPointOnShore = null;
@@ -117,7 +121,7 @@ function drawEnvironment(ctx) {
 function drawCursor(ctx) {
     ctx.beginPath();
     ctx.arc(mouseX, mouseY, TARGET_LURE_RADIUS, 0, Math.PI * 2);
-    ctx.fillStyle = !isMouseInPond && state == "placement" ? "#ff0000" : "#ffffff";
+    ctx.fillStyle = !isMouseInPond && state === "placement" ? "#ff0000" : "#ffffff";
     ctx.fill();
 }
 
@@ -148,6 +152,7 @@ function startPlacement() {
 
 function startWaiting() {
     currentFish = PLACEHOLDER_FISH;
+    waitTimer = 0;
     state = "waiting";
 }
 
@@ -160,7 +165,7 @@ function startResult() {
 }
 
 export const fishingScene = {
-    update() {
+    update(deltaTime) {
         isMouseInPond = isInPond(mouseX, mouseY);
 
         switch (state) {
@@ -171,10 +176,12 @@ export const fishingScene = {
                 }
                 break;
             case "waiting":
-                // TODO: make transation to waiting
+                waitTimer += deltaTime;
+                if (waitTimer >= WAIT_TIME) startMinigame();
                 if (mouseClicked) startPlacement();
                 break;
             case "minigame":
+                //TODO: develop minigame state
                 break;
             case "result":
                 break;
@@ -187,8 +194,8 @@ export const fishingScene = {
         switch (state) {
             case "placement":
                 if (isMouseInPond) {
-                drawFishingLine(ctx);
-                drawLure(ctx);
+                    drawFishingLine(ctx);
+                    drawLure(ctx);
                 }
                 break;
             case "waiting":
