@@ -21,13 +21,22 @@ const PLACEHOLDER_FISH = {
     baseTime: 8,
 };
 
-// Fishing update
+// Casting update
 const MAX_CAST_DISTANCE = 60;
 const WAIT_TIME = 3;
 
-// Fishing draw
-const TARGET_LURE_RADIUS = 5;
-const ACTUAL_LURE_RADIUS = 7; 
+// Casting draw
+const CURSOR_RADIUS = 5;
+const LURE_RING_RADIUS = 7; 
+
+// Minigame draw
+const OVERLAY_OPACITY = 0.5;
+const ARROW_SPACING = 100;
+const ARROW_Y = 0.5; // proportional to canvas height
+const ARROW_FONT_SIZE = 80;
+const TIMER_Y = 0.2
+const TIMER_FONT_SIZE = 60;
+
 
 let state = "placement"
 
@@ -142,15 +151,15 @@ function drawEnvironment(ctx) {
 
 function drawCursor(ctx) {
     ctx.beginPath();
-    ctx.arc(mouseX, mouseY, TARGET_LURE_RADIUS, 0, Math.PI * 2);
+    ctx.arc(mouseX, mouseY, CURSOR_RADIUS, 0, Math.PI * 2);
     ctx.fillStyle = !isMouseInPond && state === "placement" ? "#ff0000" : "#ffffff";
     ctx.fill();
 }
 
 function drawFishingLine(ctx) {
     const angle = Math.atan2(closestPointOnShore.y - lurePos.y, closestPointOnShore.x - lurePos.x);
-    const lineStartX = lurePos.x + Math.cos(angle) * ACTUAL_LURE_RADIUS;
-    const lineStartY = lurePos.y + Math.sin(angle) * ACTUAL_LURE_RADIUS;
+    const lineStartX = lurePos.x + Math.cos(angle) * LURE_RING_RADIUS;
+    const lineStartY = lurePos.y + Math.sin(angle) * LURE_RING_RADIUS;
     ctx.beginPath();
     ctx.moveTo(lineStartX, lineStartY);
     ctx.lineTo(closestPointOnShore.x, closestPointOnShore.y);
@@ -160,10 +169,49 @@ function drawFishingLine(ctx) {
 
 function drawLure(ctx) {
     ctx.beginPath();
-    ctx.arc(lurePos.x, lurePos.y, ACTUAL_LURE_RADIUS, 0, Math.PI * 2);
+    ctx.arc(lurePos.x, lurePos.y, LURE_RING_RADIUS, 0, Math.PI * 2);
     ctx.strokeStyle = "#ffffff";
     ctx.lineWidth = 1;
     ctx.stroke();
+}
+
+function drawMinigame(ctx) {
+    // Background overlay
+    ctx.fillStyle = `rgba(0, 0, 0, ${OVERLAY_OPACITY})`;
+    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+    // Arrows
+    ctx.font = `${ARROW_FONT_SIZE}px 'Courier New'`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    const centerX = ctx.canvas.width / 2;
+    const centerY = ctx.canvas.height * ARROW_Y;
+
+    for (let i = 0; i < arrowSequence.length; i++) {
+        const offset = (i - currentArrowIndex) * ARROW_SPACING;
+        const x = centerX + offset;
+
+        // Arrows grayed out if already pressed
+        ctx.fillStyle = i < currentArrowIndex ? "#888888" : "#ffffff";
+        ctx.fillText(arrowToSymbol(arrowSequence[i]), x, centerY);
+    }
+
+    // Timer 
+    const timeRemaining = (currentFish.baseTime - minigameTimer).toFixed(1);
+    ctx.fillStyle = "#ffffff"
+    ctx.textAlign = "center";
+    ctx.font = `${TIMER_FONT_SIZE}px 'Courier New''`;
+    ctx.fillText(`${timeRemaining}`, ctx.canvas.width / 2, ctx.canvas.height * TIMER_Y);
+}
+
+function arrowToSymbol(arrow) {
+    switch (arrow) {
+        case "ArrowUp": return "↑";
+        case "ArrowDown": return "↓";
+        case "ArrowLeft": return "←";
+        case "ArrowRight": return "→";
+    }
 }
 
 // === STATE MACHINE HELPERS ===
@@ -235,6 +283,7 @@ export const fishingScene = {
 
         switch (state) {
             case "placement":
+                drawCursor(ctx);
                 if (isMouseInPond) {
                     drawFishingLine(ctx);
                     drawLure(ctx);
@@ -245,12 +294,11 @@ export const fishingScene = {
                 drawLure(ctx);
                 break;
             case "minigame":
+                drawMinigame(ctx);
                 break;
             case "result":
                 break;
             
         }
-
-        drawCursor(ctx);
     }
 };
