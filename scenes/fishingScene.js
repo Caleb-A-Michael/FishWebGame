@@ -17,8 +17,8 @@ const POND_BOUNDARY = [
 ];
 
 const PLACEHOLDER_FISH = {
-    sequence: "udlrvvvvhhhhaaaa",
-    baseTime: 5,
+    sequence: "udlrvha",
+    baseTime: 8,
 };
 
 // Fishing update
@@ -31,11 +31,19 @@ const ACTUAL_LURE_RADIUS = 7;
 
 let state = "placement"
 
-let waitTimer = 0;
-let currentFish = null;
+// Placement
 let lurePos = { x: 0, y: 0 };
 let closestPointOnShore = null;
 let isMouseInPond = false;
+
+// Waiting
+let waitTimer = 0;
+
+// Minigame
+let currentFish = null;
+let arrowSequence = [];
+let currentArrowIndex = 0;
+let minigameTimer = 0;
 
 // === UPDATE HELPERS ===
 
@@ -100,6 +108,20 @@ function updateLurePlacement() {
     }
 }
 
+function resolveArrowSequence(sequence) {
+    return sequence.split("").map(char => {
+        switch (char) {
+            case "u": return "ArrowUp";
+            case "d": return "ArrowDown";
+            case "l": return "ArrowLeft";
+            case "r": return "ArrowRight";
+            case "v": return Math.random() < 0.5 ? "ArrowUp" : "ArrowDown";
+            case "h": return Math.random() < 0.5 ? "ArrowLeft" : "ArrowRight";
+            case "a": return ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"][Math.floor(Math.random() * 4)];
+        }
+    });
+}
+
 // === DRAW HELPERS ===
 
 function drawEnvironment(ctx) {
@@ -151,16 +173,25 @@ function startPlacement() {
 }
 
 function startWaiting() {
-    currentFish = PLACEHOLDER_FISH;
     waitTimer = 0;
     state = "waiting";
 }
 
 function startMinigame() {
+    currentFish = PLACEHOLDER_FISH;
+    arrowSequence = resolveArrowSequence(currentFish.sequence);
+    currentArrowIndex = 0;
+    console.log(arrowSequence);
+
+    minigameTimer = 0;
+
     state = "minigame";
 }
 
-function startResult() {
+function startResult(successful) {
+    const resultOutput = (successful) ? "You caught the fish!" : "Oh no, the fish got away!";
+    console.log(resultOutput);
+
     state = "result";
 }
 
@@ -181,9 +212,20 @@ export const fishingScene = {
                 if (mouseClicked) startPlacement();
                 break;
             case "minigame":
-                //TODO: develop minigame state
+                minigameTimer += deltaTime;
+                if (minigameTimer >= currentFish.baseTime) startResult(false);
+
+                if (keyPressed) {
+                    if (keyPressed === arrowSequence[currentArrowIndex]) {
+                        currentArrowIndex++;
+                        if (currentArrowIndex >= arrowSequence.length) startResult(true);
+                    } else {
+                        startResult(false);
+                    }
+                }
                 break;
             case "result":
+                startPlacement();
                 break;
         }
     },
