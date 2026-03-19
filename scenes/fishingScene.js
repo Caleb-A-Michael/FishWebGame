@@ -17,8 +17,9 @@ const POND_BOUNDARY = [
 ];
 
 const PLACEHOLDER_FISH = {
-    sequence: "udlrvha",
-    baseTime: 8,
+    sequence: "aaaaaa",
+    baseTime: 5,
+    name: "Redgill",
 };
 
 // Casting update
@@ -34,11 +35,18 @@ const OVERLAY_OPACITY = 0.5;
 const ARROW_SPACING = 100;
 const ARROW_Y = 0.5; // proportional to canvas height
 const ARROW_FONT_SIZE = 80;
-const TIMER_Y = 0.2
+const TIMER_Y = 0.2;
 const TIMER_FONT_SIZE = 60;
 
+// Successful catch draw
+const RESULT_UPPER_TEXT = "Congrats, you caught a"
+const RESULT_UPPER_FONT_SIZE = 30;
+const RESULT_UPPER_Y = 0.2;
+const RESULT_FISH_FONT_SIZE = 50;
+const RESULT_FISH_Y = 0.5;
 
-let state = "placement"
+
+let state = "placement";
 
 // Placement
 let lurePos = { x: 0, y: 0 };
@@ -53,6 +61,7 @@ let currentFish = null;
 let arrowSequence = [];
 let currentArrowIndex = 0;
 let minigameTimer = 0;
+let isCatchSuccessful = true;
 
 // === UPDATE HELPERS ===
 
@@ -175,12 +184,29 @@ function drawLure(ctx) {
     ctx.stroke();
 }
 
-function drawMinigame(ctx) {
-    // Background overlay
+function drawDarkout(ctx) {
     ctx.fillStyle = `rgba(0, 0, 0, ${OVERLAY_OPACITY})`;
     ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+}
 
-    // Arrows
+function drawTimer(ctx, failed) {
+    const timeRemaining = (currentFish.baseTime - minigameTimer).toFixed(1);
+    ctx.fillStyle = (failed) ? "#ff0000" : "#ffffff";
+    ctx.textAlign = "center";
+    ctx.font = `${TIMER_FONT_SIZE}px 'Courier New'`;
+    ctx.fillText(`${timeRemaining}`, ctx.canvas.width / 2, ctx.canvas.height * TIMER_Y);
+}
+
+function arrowToSymbol(arrow) {
+    switch (arrow) {
+        case "ArrowUp": return "↑";
+        case "ArrowDown": return "↓";
+        case "ArrowLeft": return "←";
+        case "ArrowRight": return "→";
+    }
+}
+
+function drawArrows(ctx, failed) {
     ctx.font = `${ARROW_FONT_SIZE}px 'Courier New'`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
@@ -192,26 +218,26 @@ function drawMinigame(ctx) {
         const offset = (i - currentArrowIndex) * ARROW_SPACING;
         const x = centerX + offset;
 
-        // Arrows grayed out if already pressed
-        ctx.fillStyle = i < currentArrowIndex ? "#888888" : "#ffffff";
+        // Arrows grayed out if already pressed, red if this arrow was failed
+        let arrow_color = (i < currentArrowIndex) ? "#888888" : "#ffffff";
+        if (i === currentArrowIndex && failed) {
+            arrow_color = "#ff0000";
+        }
+        ctx.fillStyle = arrow_color;
         ctx.fillText(arrowToSymbol(arrowSequence[i]), x, centerY);
     }
-
-    // Timer 
-    const timeRemaining = (currentFish.baseTime - minigameTimer).toFixed(1);
-    ctx.fillStyle = "#ffffff"
-    ctx.textAlign = "center";
-    ctx.font = `${TIMER_FONT_SIZE}px 'Courier New''`;
-    ctx.fillText(`${timeRemaining}`, ctx.canvas.width / 2, ctx.canvas.height * TIMER_Y);
 }
 
-function arrowToSymbol(arrow) {
-    switch (arrow) {
-        case "ArrowUp": return "↑";
-        case "ArrowDown": return "↓";
-        case "ArrowLeft": return "←";
-        case "ArrowRight": return "→";
-    }
+function drawSuccess(ctx) {
+    // Upper text
+    ctx.fillStyle = "#ffffff";
+    ctx.textAlign = "center";
+    ctx.font = `${RESULT_UPPER_FONT_SIZE}px 'Courier New'`;
+    ctx.fillText(RESULT_UPPER_TEXT, ctx.canvas.width / 2, ctx.canvas.height * RESULT_UPPER_Y);
+
+    // Fish text
+    ctx.font = `${RESULT_FISH_FONT_SIZE}px 'Courier New'`;
+    ctx.fillText(currentFish.name, ctx.canvas.width / 2, ctx.canvas.height * RESULT_FISH_Y);
 }
 
 // === STATE MACHINE HELPERS ===
@@ -229,7 +255,6 @@ function startMinigame() {
     currentFish = PLACEHOLDER_FISH;
     arrowSequence = resolveArrowSequence(currentFish.sequence);
     currentArrowIndex = 0;
-    console.log(arrowSequence);
 
     minigameTimer = 0;
 
@@ -237,8 +262,7 @@ function startMinigame() {
 }
 
 function startResult(successful) {
-    const resultOutput = (successful) ? "You caught the fish!" : "Oh no, the fish got away!";
-    console.log(resultOutput);
+    isCatchSuccessful = successful;
 
     state = "result";
 }
@@ -273,7 +297,7 @@ export const fishingScene = {
                 }
                 break;
             case "result":
-                startPlacement();
+                if (mouseClicked) startPlacement();
                 break;
         }
     },
@@ -294,11 +318,26 @@ export const fishingScene = {
                 drawLure(ctx);
                 break;
             case "minigame":
-                drawMinigame(ctx);
+                drawDarkout(ctx);
+                drawTimer(ctx, false);
+                drawArrows(ctx, false);
                 break;
             case "result":
+                drawDarkout(ctx);
+                if (isCatchSuccessful) {
+                    drawSuccess(ctx);
+                    return;
+                }
+
+                // Failure
+                if (minigameTimer >= currentFish.baseTime) {
+                    drawTimer(ctx, true);
+                    drawArrows(ctx, false);
+                } else {
+                    drawTimer(ctx, false);
+                    drawArrows(ctx, true);
+                }
                 break;
-            
         }
     }
 };
