@@ -23,7 +23,7 @@ const PLACEHOLDER_FISH = {
     name: "Redgill",
 };
 
-let state = "placement";
+let currentState = "placement";
 
 export const fishingScene = {
     onEnter() {
@@ -33,7 +33,7 @@ export const fishingScene = {
     update(deltaTime) {
         isMouseInWater = isInWater(mouseX, mouseY);
 
-        switch (state) {
+        switch (currentState) {
             case "placement":
                 updatePlacement(deltaTime);
                 break;
@@ -52,7 +52,7 @@ export const fishingScene = {
     draw(ctx) {
         drawEnvironment(ctx);
 
-        switch (state) {
+        switch (currentState) {
             case "placement":
                 drawPlacement(ctx);
                 break;
@@ -81,7 +81,7 @@ let closestPointOnShore = null;
 let isMouseInWater = false;
 
 function startPlacement() {
-    state = "placement";
+    currentState = "placement";
 }
 
 function updatePlacement(deltaTime) {
@@ -115,7 +115,8 @@ let fishBiting = false;
 function startWaiting() {
     // Sets wait timer to an int between min and max
     waitTimer = Math.floor(Math.random() * (WAIT_TIME_MAX - WAIT_TIME_MIN + 1)) + WAIT_TIME_MIN;
-    state = "waiting";
+    fishBiting = false;
+    currentState = "waiting";
 }
 
 function updateWaiting(deltaTime) {
@@ -124,13 +125,11 @@ function updateWaiting(deltaTime) {
             startMinigame();
             return;
         }
-    }
-
+    } else {
     waitTimer -= deltaTime;
-    if (waitTimer <= 0) {
-        fishBiting = true;
-    }
+    if (waitTimer <= 0) fishBiting = true;
     if (mouseClicked) startPlacement();
+    }
 }
 
 function drawWaiting(ctx) {
@@ -166,7 +165,7 @@ function startMinigame() {
 
     minigameTimer = currentFish.baseTime;
 
-    state = "minigame";
+    currentState = "minigame";
 }
 
 function updateMinigame(deltaTime) {
@@ -193,6 +192,8 @@ function resolveArrowSequence(sequence) {
             case "v": return Math.random() < 0.5 ? "ArrowUp" : "ArrowDown";
             case "h": return Math.random() < 0.5 ? "ArrowLeft" : "ArrowRight";
             case "a": return ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"][Math.floor(Math.random() * 4)];
+            default:
+                throw new Error(`Invalid sequence character: ${char}`);
         }
     });
 }
@@ -217,7 +218,7 @@ const RESULT_FISH_Y = 0.5;
 function startResult(type) {
     resultType = type;
 
-    state = "result";
+    currentState = "result";
 }
 
 function updateResult(deltaTime) {
@@ -264,11 +265,13 @@ function drawEnvironment(ctx) {
 function drawCursor(ctx) {
     ctx.beginPath();
     ctx.arc(mouseX, mouseY, CURSOR_RADIUS, 0, Math.PI * 2);
-    ctx.fillStyle = !isMouseInWater && state === "placement" ? "#ff0000" : "#ffffff";
+    ctx.fillStyle = !isMouseInWater && currentState === "placement" ? "#ff0000" : "#ffffff";
     ctx.fill();
 }
 
 function drawFishingLine(ctx) {
+    if (!closestPointOnShore) throw new Error(`closestPointOnShore not defined`); 
+
     const angle = Math.atan2(closestPointOnShore.y - lurePos.y, closestPointOnShore.x - lurePos.x);
     const lineStartX = lurePos.x + Math.cos(angle) * LURE_RING_RADIUS;
     const lineStartY = lurePos.y + Math.sin(angle) * LURE_RING_RADIUS;
@@ -318,6 +321,8 @@ function arrowToSymbol(arrow) {
         case "ArrowDown": return "↓";
         case "ArrowLeft": return "←";
         case "ArrowRight": return "→";
+        default:
+            throw new Error(`Invalid sequence input: ${char}`); 
     }
 }
 
