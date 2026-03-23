@@ -1,6 +1,3 @@
-const INTERNAL_WIDTH = 640;
-const INTERNAL_HEIGHT = 360;
-
 export function initDisplay(canvas) {
     canvas.style.position = "absolute";
     canvas.style.left = "50%";
@@ -13,7 +10,7 @@ export function initDisplay(canvas) {
 
 function resizeCanvas(canvas) {
     const windowAspect = window.innerWidth / window.innerHeight;
-    const gameAspect = INTERNAL_WIDTH / INTERNAL_HEIGHT;
+    const gameAspect = canvas.width / canvas.height;
 
     if (windowAspect > gameAspect) {
         canvas.style.height = "100vh";
@@ -25,5 +22,5 @@ function resizeCanvas(canvas) {
 }
 
 export function getScale(canvas) {
-    return canvas.offsetWidth / INTERNAL_WIDTH;
+    return canvas.offsetWidth / canvas.width;
 }
