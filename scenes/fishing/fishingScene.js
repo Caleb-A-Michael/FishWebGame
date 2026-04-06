@@ -1,20 +1,52 @@
 import { mouseX, mouseY, mouseClicked, keyPressed } from "../../core/input.js";
+import { drawSprite, drawPixelLine } from "../../utils/draw.js";
 import { loadWaterBoundary, isInWater, getLurePlacement } from "./waterGeometry.js";
+
+const pondImage = new Image();
+pondImage.src = "../../assets/images/placeholderPond.png";
+const cursorImage = new Image();
+cursorImage.src = "../../assets/images/cursor.png";
+const anchorImage = new Image();
+anchorImage.src = "../../assets/images/fishingLineAnchor.png";
+const lureRingImage = new Image();
+lureRingImage.src = "../../assets/images/lureRing.png";
+const bobberFloating = new Image();
+bobberFloating.src = "../../assets/images/bobberFloating.png";
+const bobberSank = new Image();
+bobberSank.src = "../../assets/images/bobberSank.png";
+const bitingIndicator = new Image();
+bitingIndicator.src = "../../assets/images/bitingIndicator.png";
+
 
 // Water boundaries (pixel cords)
 const WATER_BOUNDARY = [
-    { x: 80, y: 140 },
-    { x: 160, y: 100 },
-    { x: 280, y: 80 },
-    { x: 400, y: 90 },
-    { x: 500, y: 120 },
-    { x: 560, y: 170 },
-    { x: 540, y: 230 },
-    { x: 460, y: 278 },
-    { x: 343, y: 290 },
-    { x: 200, y: 280 },
-    { x: 100, y: 250 },
-    { x: 60, y: 200 }
+    { x: 60, y: 16 }, { x: 68, y: 16 }, { x: 69, y: 17 }, { x: 72, y: 17 }, { x: 73, y: 18 },
+  { x: 74, y: 18 }, { x: 76, y: 20 }, { x: 77, y: 20 }, { x: 80, y: 23 }, { x: 83, y: 23 },
+  { x: 84, y: 22 }, { x: 87, y: 22 }, { x: 88, y: 23 }, { x: 89, y: 23 }, { x: 93, y: 19 },
+  { x: 94, y: 19 }, { x: 95, y: 18 }, { x: 107, y: 18 }, { x: 108, y: 19 }, { x: 112, y: 19 },
+  { x: 113, y: 20 }, { x: 115, y: 20 }, { x: 116, y: 21 }, { x: 117, y: 21 }, { x: 118, y: 22 },
+  { x: 120, y: 22 }, { x: 121, y: 23 }, { x: 122, y: 23 }, { x: 125, y: 26 }, { x: 126, y: 26 },
+  { x: 129, y: 29 }, { x: 129, y: 30 }, { x: 130, y: 31 }, { x: 130, y: 33 }, { x: 134, y: 37 },
+  { x: 134, y: 38 }, { x: 136, y: 40 }, { x: 136, y: 42 }, { x: 138, y: 44 }, { x: 138, y: 45 },
+  { x: 139, y: 46 }, { x: 139, y: 47 }, { x: 140, y: 48 }, { x: 140, y: 55 }, { x: 139, y: 56 },
+  { x: 139, y: 57 }, { x: 138, y: 58 }, { x: 138, y: 60 }, { x: 137, y: 61 }, { x: 137, y: 62 },
+  { x: 136, y: 63 }, { x: 135, y: 63 }, { x: 134, y: 64 }, { x: 133, y: 64 }, { x: 131, y: 66 },
+  { x: 129, y: 66 }, { x: 128, y: 67 }, { x: 127, y: 67 }, { x: 125, y: 65 }, { x: 123, y: 65 },
+  { x: 117, y: 71 }, { x: 117, y: 72 }, { x: 116, y: 72 }, { x: 115, y: 73 }, { x: 113, y: 73 },
+  { x: 112, y: 74 }, { x: 111, y: 74 }, { x: 110, y: 75 }, { x: 98, y: 75 }, { x: 97, y: 74 },
+  { x: 96, y: 74 }, { x: 95, y: 73 }, { x: 80, y: 73 }, { x: 79, y: 74 }, { x: 78, y: 74 },
+  { x: 76, y: 72 }, { x: 74, y: 72 }, { x: 70, y: 76 }, { x: 69, y: 76 }, { x: 68, y: 77 },
+  { x: 57, y: 77 }, { x: 56, y: 76 }, { x: 54, y: 76 }, { x: 53, y: 75 }, { x: 46, y: 75 },
+  { x: 45, y: 74 }, { x: 44, y: 74 }, { x: 43, y: 73 }, { x: 39, y: 73 }, { x: 38, y: 72 },
+  { x: 36, y: 72 }, { x: 35, y: 71 }, { x: 31, y: 71 }, { x: 26, y: 66 }, { x: 26, y: 65 },
+  { x: 24, y: 63 }, { x: 24, y: 62 }, { x: 23, y: 61 }, { x: 23, y: 60 }, { x: 22, y: 59 },
+  { x: 22, y: 57 }, { x: 21, y: 56 }, { x: 21, y: 50 }, { x: 22, y: 49 }, { x: 22, y: 48 },
+  { x: 20, y: 46 }, { x: 20, y: 44 }, { x: 22, y: 42 }, { x: 21, y: 41 }, { x: 21, y: 40 },
+  { x: 20, y: 39 }, { x: 20, y: 37 }, { x: 22, y: 35 }, { x: 22, y: 34 }, { x: 23, y: 33 },
+  { x: 23, y: 32 }, { x: 25, y: 30 }, { x: 25, y: 29 }, { x: 26, y: 29 }, { x: 27, y: 28 },
+  { x: 31, y: 28 }, { x: 32, y: 29 }, { x: 33, y: 29 }, { x: 36, y: 26 }, { x: 37, y: 27 },
+  { x: 38, y: 27 }, { x: 43, y: 22 }, { x: 44, y: 22 }, { x: 46, y: 20 }, { x: 49, y: 20 },
+  { x: 50, y: 19 }, { x: 56, y: 19 }, { x: 57, y: 18 }, { x: 58, y: 18 }, { x: 59, y: 17 }
 ];
 
 const PLACEHOLDER_FISH = {
@@ -71,10 +103,7 @@ export const fishingScene = {
 
 // #region PLACEMENT STATE
 
-const MAX_CAST_DISTANCE = 60;
-
-const CURSOR_RADIUS = 5;
-const LURE_RING_RADIUS = 7; 
+const MAX_CAST_DISTANCE = 12;
 
 let lurePos = { x: 0, y: 0 };
 let closestPointOnShore = null;
@@ -92,10 +121,12 @@ function updatePlacement(deltaTime) {
 }
 
 function drawPlacement(ctx) {
+    if (isMouseInWater) drawLureCircle(ctx);
     drawCursor(ctx);
     if (isMouseInWater) {
+        drawBobber(ctx);
         drawFishingLine(ctx);
-        drawLure(ctx);
+        drawAnchor(ctx);
     }
 }
 
@@ -111,6 +142,7 @@ const BITING_Y_OFFSET = 25;
 
 let waitTimer = 0;
 let fishBiting = false;
+let indictorBobTimer = 0;
 
 function startWaiting() {
     // Sets wait timer to an int between min and max
@@ -120,6 +152,8 @@ function startWaiting() {
 }
 
 function updateWaiting(deltaTime) {
+    indictorBobTimer += deltaTime; 
+
     if (fishBiting) {
         if (mouseClicked || keyPressed === "ArrowUp") {
             startMinigame();
@@ -133,7 +167,7 @@ function updateWaiting(deltaTime) {
 }
 
 function drawWaiting(ctx) {
-    drawLure(ctx);
+    drawBobber(ctx);
     if (fishBiting) {
         drawBiting(ctx);
     }
@@ -142,13 +176,6 @@ function drawWaiting(ctx) {
 // #endregion
 
 // #region MINIGAME STATE
-
-const OVERLAY_OPACITY = 0.5;
-const ARROW_SPACING = 100;
-const ARROW_Y = 0.5; // proportional to canvas height
-const ARROW_FONT_SIZE = 80;
-const TIMER_Y = 0.2;
-const TIMER_FONT_SIZE = 60;
 
 let currentFish = null;
 let arrowSequence = [];
@@ -208,13 +235,6 @@ function drawMinigame(ctx) {
 
 // #region RESULT STATE
 
-// On Successful catch
-const RESULT_UPPER_TEXT = "Congrats, you caught a"
-const RESULT_UPPER_FONT_SIZE = 30;
-const RESULT_UPPER_Y = 0.2;
-const RESULT_FISH_FONT_SIZE = 50;
-const RESULT_FISH_Y = 0.5;
-
 function startResult(type) {
     resultType = type;
 
@@ -246,27 +266,18 @@ function drawResult(ctx) {
 
 // #region DRAW WORLD
 
-function drawEnvironment(ctx) {
-    // Shore
-    ctx.fillStyle = "#78ab46";
-    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+const LURE_RING_RADIUS = 4.1; 
 
-    // Water
-    ctx.fillStyle = "#4a90d9";
-    ctx.beginPath();
-    ctx.moveTo(WATER_BOUNDARY[0].x, WATER_BOUNDARY[0].y);
-    for (let i = 1; i < WATER_BOUNDARY.length; i++) {
-        ctx.lineTo(WATER_BOUNDARY[i].x, WATER_BOUNDARY[i].y);
-    }
-    ctx.closePath();
-    ctx.fill();
+const BITE_INDICATOR_OFFSET = 12;
+const BITE_INDICATOR_SPEED = 3;
+const BITE_INDICATOR_AMPLITUDE = 1;
+
+function drawEnvironment(ctx) {
+    ctx.drawImage(pondImage, 0, 0, ctx.canvas.width, ctx.canvas.height);
 }
 
 function drawCursor(ctx) {
-    ctx.beginPath();
-    ctx.arc(mouseX, mouseY, CURSOR_RADIUS, 0, Math.PI * 2);
-    ctx.fillStyle = !isMouseInWater && currentState === "placement" ? "#ff0000" : "#ffffff";
-    ctx.fill();
+    drawSprite(ctx, cursorImage, mouseX, mouseY);
 }
 
 function drawFishingLine(ctx) {
@@ -275,33 +286,52 @@ function drawFishingLine(ctx) {
     const angle = Math.atan2(closestPointOnShore.y - lurePos.y, closestPointOnShore.x - lurePos.x);
     const lineStartX = lurePos.x + Math.cos(angle) * LURE_RING_RADIUS;
     const lineStartY = lurePos.y + Math.sin(angle) * LURE_RING_RADIUS;
-    ctx.beginPath();
-    ctx.moveTo(lineStartX, lineStartY);
-    ctx.lineTo(closestPointOnShore.x, closestPointOnShore.y);
-    ctx.strokeStyle = "#ffffff";
-    ctx.stroke();
+    
+    ctx.fillStyle = "#000000";
+    drawPixelLine(ctx, lineStartX, lineStartY, closestPointOnShore.x, closestPointOnShore.y);
 }
 
-function drawLure(ctx) {
-    ctx.beginPath();
-    ctx.arc(lurePos.x, lurePos.y, LURE_RING_RADIUS, 0, Math.PI * 2);
-    ctx.strokeStyle = "#ffffff";
-    ctx.lineWidth = 1;
-    ctx.stroke();
+function drawLureCircle(ctx) {
+    drawSprite(ctx, lureRingImage, lurePos.x, lurePos.y);
+}
+
+function drawBobber(ctx) {
+    if (fishBiting) {
+        drawSprite(ctx, bobberSank, lurePos.x, lurePos.y);
+    } else {
+        drawSprite(ctx, bobberFloating, lurePos.x, lurePos.y);
+    }
+}
+
+function drawAnchor(ctx) {
+    drawSprite(ctx, anchorImage, closestPointOnShore.x, closestPointOnShore.y);
 }
 
 function drawBiting(ctx) {
-    ctx.font = `${BITING_FONT_SIZE}px 'Courier New'`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillStyle = "#ffffff";
-    ctx.fillText("↑", lurePos.x, lurePos.y - BITING_Y_OFFSET);
+    let yOffset = BITE_INDICATOR_OFFSET + Math.sin(indictorBobTimer * BITE_INDICATOR_SPEED) * BITE_INDICATOR_AMPLITUDE;
+    drawSprite(ctx, bitingIndicator, lurePos.x, Math.round(lurePos.y) - yOffset);
 }
-
 
 // #endregion
 
 // #region DRAW MINIGAME
+
+// Y values proportional to canvas height
+const OVERLAY_OPACITY = 0.5;
+const ARROW_SPACING = 40;
+const ARROW_Y = 0.5;
+const ARROW_FONT_SIZE = 20;
+const TIMER_Y = 0.2;
+const TIMER_FONT_SIZE = 20;
+
+// On Successful catch
+const RESULT_UPPER_TEXT = "Congrats, you caught a"
+const RESULT_UPPER_FONT_SIZE = 10;
+const RESULT_UPPER_Y = 0.2;
+const RESULT_FISH_FONT_SIZE = 20;
+const RESULT_FISH_Y = 0.5;
+
+
 
 function drawDarkout(ctx) {
     ctx.fillStyle = `rgba(0, 0, 0, ${OVERLAY_OPACITY})`;
