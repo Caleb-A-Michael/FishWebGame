@@ -1,5 +1,6 @@
 import { mouseX, mouseY, mouseClicked, keyPressed } from "../../core/input.js";
 import { drawSprite, drawPixelLine } from "../../utils/draw.js";
+import { startCatch, updateCatch } from "./catchSystem.js";
 import { loadWaterBoundary, isInWater, getLurePlacement } from "./waterGeometry.js";
 
 const pondImage = new Image();
@@ -48,12 +49,6 @@ const WATER_BOUNDARY = [
   { x: 38, y: 27 }, { x: 43, y: 22 }, { x: 44, y: 22 }, { x: 46, y: 20 }, { x: 49, y: 20 },
   { x: 50, y: 19 }, { x: 56, y: 19 }, { x: 57, y: 18 }, { x: 58, y: 18 }, { x: 59, y: 17 }
 ];
-
-const PLACEHOLDER_FISH = {
-    sequence: "aaaaaa",
-    baseTime: 3,
-    name: "Redgill",
-};
 
 let currentState = "placement";
 
@@ -134,41 +129,42 @@ function drawPlacement(ctx) {
 
 // #region WAITING STATE
 
-const WAIT_TIME_MIN = 2;
-const WAIT_TIME_MAX = 10;
+const BITING_RESPONSE_TIME = 15;
 
-const BITING_FONT_SIZE = 20;
-const BITING_Y_OFFSET = 25;
-
-let waitTimer = 0;
-let fishBiting = false;
+let bitingTimer = 0;
+let fishBiting = null;
 let indictorBobTimer = 0;
 
 function startWaiting() {
     // Sets wait timer to an int between min and max
-    waitTimer = Math.floor(Math.random() * (WAIT_TIME_MAX - WAIT_TIME_MIN + 1)) + WAIT_TIME_MIN;
-    fishBiting = false;
+    startCatch(lurePos.x, lurePos.y);
+    fishBiting = null;
     currentState = "waiting";
 }
 
 function updateWaiting(deltaTime) {
     indictorBobTimer += deltaTime; 
 
-    if (fishBiting) {
-        if (mouseClicked || keyPressed === "ArrowUp") {
-            startMinigame();
-            return;
+    if (fishBiting === null) {
+        fishBiting = updateCatch(deltaTime);
+        if (fishBiting !== null) {
+            bitingTimer = BITING_RESPONSE_TIME;
         }
     } else {
-    waitTimer -= deltaTime;
-    if (waitTimer <= 0) fishBiting = true;
-    if (mouseClicked) startPlacement();
+        bitingTimer -= deltaTime;
+        if (bitingTimer <= 0) {
+            fishBiting = null;
+            startPlacement();
+        }
+        if (keyPressed === "ArrowUp") startMinigame();
     }
+
+    if (mouseClicked) startPlacement();
 }
 
 function drawWaiting(ctx) {
     drawBobber(ctx);
-    if (fishBiting) {
+    if (fishBiting !== null) {
         drawBiting(ctx);
     }
 }
@@ -330,8 +326,6 @@ const RESULT_UPPER_FONT_SIZE = 10;
 const RESULT_UPPER_Y = 0.2;
 const RESULT_FISH_FONT_SIZE = 20;
 const RESULT_FISH_Y = 0.5;
-
-
 
 function drawDarkout(ctx) {
     ctx.fillStyle = `rgba(0, 0, 0, ${OVERLAY_OPACITY})`;
