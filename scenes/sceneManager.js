@@ -2,7 +2,7 @@ let currentScene = null;
 
 export function setScene(scene) {
     currentScene = scene;
-    if (currentScene.onEnter()) currentScene.onEnter();
+    if (currentScene) currentScene.onEnter();
 }
 
 export function update(deltaTime) {
