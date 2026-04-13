@@ -1,6 +1,6 @@
 import { mouseX, mouseY, mouseClicked, keyPressed } from "../../core/input.js";
 import { drawSprite, drawPixelLine } from "../../utils/draw.js";
-import { startCatch, updateCatch } from "./catchSystem.js";
+import { initDensityMapCanvas, startCatch, updateCatch } from "./catchSystem.js";
 import { loadWaterBoundary, isInWater, getLurePlacement } from "./waterGeometry.js";
 
 const pondImage = new Image();
@@ -53,8 +53,9 @@ const WATER_BOUNDARY = [
 let currentState = "placement";
 
 export const fishingScene = {
-    onEnter() {
+    onEnter(ctx) {
         loadWaterBoundary({ boundaryPoints: WATER_BOUNDARY });
+        initDensityMapCanvas(ctx.canvas.width, ctx.canvas.height);
     },
 
     update(deltaTime) {
@@ -173,20 +174,16 @@ function drawWaiting(ctx) {
 
 // #region MINIGAME STATE
 
-let currentFish = null;
 let arrowSequence = [];
 let currentArrowIndex = 0;
 let minigameTimer = 0;
 let resultType = null; // Either timeout, wrongInput, or successful
 
 function startMinigame() {
-    fishBiting = false;
-
-    currentFish = PLACEHOLDER_FISH;
-    arrowSequence = resolveArrowSequence(currentFish.sequence);
+    arrowSequence = resolveArrowSequence(fishBiting.catchSequence);
     currentArrowIndex = 0;
 
-    minigameTimer = currentFish.baseTime;
+    minigameTimer = fishBiting.catchTime;
 
     currentState = "minigame";
 }
@@ -381,7 +378,7 @@ function drawSuccess(ctx) {
 
     // Fish text
     ctx.font = `${RESULT_FISH_FONT_SIZE}px 'Courier New'`;
-    ctx.fillText(currentFish.name, ctx.canvas.width / 2, ctx.canvas.height * RESULT_FISH_Y);
+    ctx.fillText(fishBiting.name, ctx.canvas.width / 2, ctx.canvas.height * RESULT_FISH_Y);
 }
 
 // #endregion

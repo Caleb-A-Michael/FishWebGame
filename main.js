@@ -8,5 +8,5 @@ initDisplay(canvas);
 const ctx = canvas.getContext("2d");
 ctx.imageSmoothingEnabled = false;
 
-setScene(fishingScene);
+setScene(fishingScene, ctx);
 startGameLoop(ctx);

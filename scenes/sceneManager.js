@@ -1,8 +1,8 @@
 let currentScene = null;
 
-export function setScene(scene) {
+export function setScene(scene, ctx) {
     currentScene = scene;
-    if (currentScene) currentScene.onEnter();
+    if (currentScene) currentScene.onEnter(ctx);
 }
 
 export function update(deltaTime) {
