@@ -235,7 +235,10 @@ function startResult(type) {
 }
 
 function updateResult(deltaTime) {
-    if (mouseClicked) startPlacement();
+    if (mouseClicked) {
+        fishBiting = null;
+        startPlacement();
+    }
 }
 
 function drawResult(ctx) {
