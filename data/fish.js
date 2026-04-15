@@ -2,25 +2,29 @@ export const FISH = {
     BananaFruitFish: {
         name: "Banana FruitFish",
         frequency: 1,
+        densityMap: "consistent",
         catchSequence: "uhhhu",
         catchTime: 3
     },
     GumdropGuppy: {
         name: "Gumdrop Guppy",
         frequency: 1.5,
+        densityMap: "center",
         catchSequence: "dhdhdad",
         catchTime: 5
     },
-    MossFish: {
-        name: "Moss Fish",
+    MossPerch: {
+        name: "Moss Perch",
         frequency: 1.5,
+        densityMap: "shore",
         catchSequence: "aaaaa",
         catchTime: 4
     },
-    BalloonFish: {
-        name: "Balloon Fish",
+    RightFinnedWalleye: {
+        name: "Right-Finned Walleye",
         frequency: .6,
-        catchSequence: "uuuuuuuu",
+        densityMap: "right",
+        catchSequence: "rrrrrrr",
         catchTime: 2
     }
 };

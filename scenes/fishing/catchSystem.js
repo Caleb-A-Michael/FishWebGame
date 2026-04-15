@@ -1,12 +1,25 @@
 import { FISH } from "../../data/fish.js";
 
-const RESAMPLE_INTERVAL = 2;
+const RESAMPLE_INTERVAL = 6;
 const MIN_BITE_TIME = 2;
 
-const NO_BITE_WEIGHT = 1;
+const NO_BITE_WEIGHT = 3;
 
-const TEST_DENSITY_MAP = new Image();
-TEST_DENSITY_MAP.src = '../../assets/images/densityMaps/TestDensity.png'
+const SHORE_DM = new Image();
+SHORE_DM.src = '../../assets/images/densityMaps/testDensityShore.png';
+const CENTER_DM = new Image();
+CENTER_DM.src = '../../assets/images/densityMaps/testDensityCenter.png';
+const RIGHT_DM = new Image();
+RIGHT_DM.src = '../../assets/images/densityMaps/testDensityRight.png';
+const CONSISTENT_DM = new Image();
+CONSISTENT_DM.src = '../../assets/images/densityMaps/testDensityConsistent.png';
+
+const DENSITY_MAPS = {
+    shore: SHORE_DM,
+    center: CENTER_DM,
+    right: RIGHT_DM,
+    consistent: CONSISTENT_DM
+};
 
 let densityMapCanvas = null;
 let densityMapCtx = null;
@@ -16,8 +29,8 @@ let scaleY = 0;
 export function initDensityMapCanvas(gameCanvasWidth, gameCanvasHeight) {
     densityMapCanvas = document.createElement('canvas');
     densityMapCtx = densityMapCanvas.getContext('2d', {willReadFrequently: true});
-    densityMapCanvas.width = TEST_DENSITY_MAP.width;
-    densityMapCanvas.height = TEST_DENSITY_MAP.height;
+    densityMapCanvas.width = CONSISTENT_DM.width;
+    densityMapCanvas.height = CONSISTENT_DM.height;
 
     scaleX = densityMapCanvas.width / gameCanvasWidth;
     scaleY = densityMapCanvas.height / gameCanvasHeight;
@@ -55,8 +68,8 @@ export function updateCatch(deltaTime) {
     return null;
 }
 
-function getDensityValue(x, y) {
-    densityMapCtx.drawImage(TEST_DENSITY_MAP, 0, 0);
+function getDensityValue(x, y, densityMap) {
+    densityMapCtx.drawImage(densityMap, 0, 0);
 
     const scaledX = Math.floor(x * scaleX);
     const scaledY = Math.floor(y * scaleY);
@@ -64,11 +77,11 @@ function getDensityValue(x, y) {
         return 0;
     }
     const pixel = densityMapCtx.getImageData(scaledX, scaledY, 1, 1).data;
-    return pixel[0] / 255;
+    return 1 - (pixel[0] / 255); // invert (black is more weight)
 }
 
 function getFishWeight(fish) {
-    return Math.max(0, fish.frequency);
+    return Math.max(0, fish.frequency * getDensityValue(x, y, DENSITY_MAPS[fish.densityMap]));
 }
 
 function rollFish() {
@@ -78,8 +91,9 @@ function rollFish() {
     // builds cumulative weights
     for (const fish of Object.values(FISH)) {
 
-        console.log("adding " + fish.name + " to list");
+        
         let weight = getFishWeight(fish);
+        console.log("Adding to list: " + fish.name + " " + weight);
         if (weight <= 0) continue;
 
         cumulative += weight;
