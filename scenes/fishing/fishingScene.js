@@ -1,4 +1,4 @@
-import { mouseX, mouseY, mouseClicked, keyPressed } from "../../core/input.js";
+import { mouseX, mouseY, mouseClicked, arrowPressed } from "../../core/input.js";
 import { drawSprite, drawPixelLine, drawTintedSprite } from "../../utils/draw.js";
 import { initDensityMapCanvas, startCatch, updateCatch } from "./catchSystem.js";
 import { loadWaterBoundary, isInWater, getLurePlacement } from "./waterGeometry.js";
@@ -175,7 +175,7 @@ function updateWaiting(deltaTime) {
             fishBiting = null;
             startPlacement();
         }
-        if (keyPressed === "ArrowUp") startMinigame();
+        if (arrowPressed === "ArrowUp") startMinigame();
     }
 
     if (mouseClicked) startPlacement();
@@ -211,8 +211,8 @@ function updateMinigame(deltaTime) {
     minigameTimer -= deltaTime;
     if (minigameTimer <= 0) startResult("timeout");
 
-    if (keyPressed) {
-        if (keyPressed === arrowSequence[currentArrowIndex]) {
+    if (arrowPressed && arrowPressed !== null) {
+        if (arrowPressed === arrowSequence[currentArrowIndex]) {
             currentArrowIndex++;
             if (currentArrowIndex >= arrowSequence.length) startResult("successful");
         } else {

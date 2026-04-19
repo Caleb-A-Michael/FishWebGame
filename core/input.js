@@ -2,7 +2,7 @@ export let mouseX = 0;
 export let mouseY = 0;
 export let mouseClicked = false;
 
-export let keyPressed = null;
+export let arrowPressed = null;
 
 const canvas = document.getElementById("gameCanvas");
 
@@ -19,10 +19,29 @@ canvas.addEventListener("click", () => {
 });
 
 window.addEventListener("keydown", (event) => {
-    keyPressed = event.key;
+    switch(event.key) {
+        case "ArrowUp":
+        case "w":
+            arrowPressed = "ArrowUp";
+            break;
+        case "ArrowDown":
+        case "s":
+            arrowPressed = "ArrowDown";
+            break;
+        case "ArrowLeft":
+        case "a":
+            arrowPressed = "ArrowLeft";
+            break;
+        case "ArrowRight":
+        case "d":
+            arrowPressed = "ArrowRight";
+            break;
+        default:
+            arrowPressed = "OtherKey";
+    }
 });
 
 export function resetInput() {
     mouseClicked = false;
-    keyPressed = null;
+    arrowPressed = null;
 }
