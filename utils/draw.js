@@ -2,6 +2,29 @@ export function drawSprite(ctx, image, x, y) {
     ctx.drawImage(image, Math.round(x - image.width / 2), Math.round(y - image.height / 2));
 }
 
+export function drawOpacitySprite(ctx, image, x, y, opacity) {
+    ctx.save();
+    ctx.globalAlpha = opacity;
+    ctx.drawImage(image, Math.round(x - image.width / 2), Math.round(y - image.height / 2));
+    ctx.restore();
+}
+
+export function drawTintedSprite(ctx, image, x, y, tintColor) {
+    const offscreen = document.createElement('canvas');
+    offscreen.width = image.width;
+    offscreen.height = image.height;
+
+    const offCtx = offscreen.getContext('2d');
+
+    offCtx.drawImage(image, 0, 0);
+
+    offCtx.globalCompositeOperation = 'source-atop';
+    offCtx.fillStyle = tintColor;
+    offCtx.fillRect(0, 0, image.width, image.height);
+
+    ctx.drawImage(offscreen, Math.round(x - image.width / 2), Math.round(y - image.height / 2));
+}
+
 // Bresenham's line algorithm 
 export function drawPixelLine(ctx, x0, y0, x1, y1) {
     x0 = Math.round(x0);

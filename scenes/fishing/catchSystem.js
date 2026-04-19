@@ -3,7 +3,7 @@ import { FISH } from "../../data/fish.js";
 const RESAMPLE_INTERVAL = 6;
 const MIN_BITE_TIME = 2;
 
-const NO_BITE_WEIGHT = 3;
+const NO_BITE_WEIGHT = 0;
 
 const SHORE_DM = new Image();
 SHORE_DM.src = '../../assets/images/densityMaps/testDensityShore.png';
