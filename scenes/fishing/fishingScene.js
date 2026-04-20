@@ -3,23 +3,26 @@ import { drawSprite, drawPixelLine, drawTintedSprite } from "../../utils/draw.js
 import { initDensityMapCanvas, startCatch, updateCatch } from "./catchSystem.js";
 import { loadWaterBoundary, isInWater, getLurePlacement } from "./waterGeometry.js";
 
+const POND = new Image();
+POND.src = "../../assets/images/enviroment/pond.png";
+
 const CURSOR_VALID = new Image();
-CURSOR_VALID.src = "../../assets/images/World UI/cursor-valid.png";
+CURSOR_VALID.src = "../../assets/images/worldUI/cursor-valid.png";
 const CURSOR_INVALID = new Image();
-CURSOR_INVALID.src = "../../assets/images/World UI/cursor-invalid.png";
+CURSOR_INVALID.src = "../../assets/images/worldUI/cursor-invalid.png";
 const CATCH_ARROW_PROMPT = new Image();
-CATCH_ARROW_PROMPT.src = "../../assets/images/World UI/catch-arrow-prompt.png";
+CATCH_ARROW_PROMPT.src = "../../assets/images/worldUI/catch-arrow-prompt.png";
 
 const MINIGAME_BACKGROUND = new Image();
-MINIGAME_BACKGROUND.src = "../../assets/images/MinigameUI/minigame-background.png"
+MINIGAME_BACKGROUND.src = "../../assets/images/minigameUI/minigame-background.png"
 const MINIGAME_ARROW_UP = new Image();
-MINIGAME_ARROW_UP.src = "../../assets/images/MinigameUI/minigame-arrow-up.png";
+MINIGAME_ARROW_UP.src = "../../assets/images/minigameUI/minigame-arrow-up.png";
 const MINIGAME_ARROW_DOWN = new Image();
-MINIGAME_ARROW_DOWN.src = "../../assets/images/MinigameUI/minigame-arrow-down.png";
+MINIGAME_ARROW_DOWN.src = "../../assets/images/minigameUI/minigame-arrow-down.png";
 const MINIGAME_ARROW_LEFT = new Image();
-MINIGAME_ARROW_LEFT.src = "../../assets/images/MinigameUI/minigame-arrow-left.png";
+MINIGAME_ARROW_LEFT.src = "../../assets/images/minigameUI/minigame-arrow-left.png";
 const MINIGAME_ARROW_RIGHT = new Image();
-MINIGAME_ARROW_RIGHT.src = "../../assets/images/MinigameUI/minigame-arrow-right.png";
+MINIGAME_ARROW_RIGHT.src = "../../assets/images/minigameUI/minigame-arrow-right.png";
 
 const pondImage = new Image();
 pondImage.src = "../../assets/images/placeholderPond.png";
@@ -38,33 +41,29 @@ bitingIndicator.src = "../../assets/images/bitingIndicator.png";
 
 // Water boundaries (pixel cords)
 const WATER_BOUNDARY = [
-  { x: 720, y: 192 }, { x: 816, y: 192 }, { x: 828, y: 204 }, { x: 864, y: 204 }, { x: 876, y: 216 },
-  { x: 888, y: 216 }, { x: 912, y: 240 }, { x: 924, y: 240 }, { x: 960, y: 276 }, { x: 996, y: 276 },
-  { x: 1008, y: 264 }, { x: 1044, y: 264 }, { x: 1056, y: 276 }, { x: 1068, y: 276 }, { x: 1116, y: 228 },
-  { x: 1128, y: 228 }, { x: 1140, y: 216 }, { x: 1284, y: 216 }, { x: 1296, y: 228 }, { x: 1344, y: 228 },
-  { x: 1356, y: 240 }, { x: 1380, y: 240 }, { x: 1392, y: 252 }, { x: 1404, y: 252 }, { x: 1416, y: 264 },
-  { x: 1440, y: 264 }, { x: 1452, y: 276 }, { x: 1464, y: 276 }, { x: 1500, y: 312 }, { x: 1512, y: 312 },
-  { x: 1548, y: 348 }, { x: 1548, y: 360 }, { x: 1560, y: 372 }, { x: 1560, y: 396 }, { x: 1608, y: 444 },
-  { x: 1608, y: 456 }, { x: 1632, y: 480 }, { x: 1632, y: 504 }, { x: 1656, y: 528 }, { x: 1656, y: 540 },
-  { x: 1668, y: 552 }, { x: 1668, y: 564 }, { x: 1680, y: 576 }, { x: 1680, y: 660 }, { x: 1668, y: 672 },
-  { x: 1668, y: 684 }, { x: 1656, y: 696 }, { x: 1656, y: 720 }, { x: 1644, y: 732 }, { x: 1644, y: 744 },
-  { x: 1632, y: 756 }, { x: 1620, y: 756 }, { x: 1608, y: 768 }, { x: 1596, y: 768 }, { x: 1572, y: 792 },
-  { x: 1548, y: 792 }, { x: 1536, y: 804 }, { x: 1524, y: 804 }, { x: 1500, y: 780 }, { x: 1476, y: 780 },
-  { x: 1404, y: 852 }, { x: 1404, y: 864 }, { x: 1392, y: 864 }, { x: 1380, y: 876 }, { x: 1356, y: 876 },
-  { x: 1344, y: 888 }, { x: 1332, y: 888 }, { x: 1320, y: 900 }, { x: 1248, y: 900 }, { x: 1236, y: 888 },
-  { x: 1224, y: 888 }, { x: 1212, y: 876 }, { x: 960, y: 876 }, { x: 948, y: 888 }, { x: 936, y: 888 },
-  { x: 912, y: 864 }, { x: 888, y: 864 }, { x: 840, y: 912 }, { x: 828, y: 912 }, { x: 816, y: 924 },
-  { x: 684, y: 924 }, { x: 672, y: 912 }, { x: 648, y: 912 }, { x: 636, y: 900 }, { x: 552, y: 900 },
-  { x: 540, y: 888 }, { x: 528, y: 888 }, { x: 516, y: 876 }, { x: 468, y: 876 }, { x: 456, y: 864 },
-  { x: 432, y: 864 }, { x: 420, y: 852 }, { x: 372, y: 852 }, { x: 312, y: 792 }, { x: 312, y: 780 },
-  { x: 288, y: 756 }, { x: 288, y: 744 }, { x: 276, y: 732 }, { x: 276, y: 720 }, { x: 264, y: 708 },
-  { x: 264, y: 684 }, { x: 252, y: 672 }, { x: 252, y: 600 }, { x: 264, y: 588 }, { x: 264, y: 576 },
-  { x: 240, y: 552 }, { x: 240, y: 528 }, { x: 264, y: 504 }, { x: 252, y: 492 }, { x: 252, y: 480 },
-  { x: 240, y: 468 }, { x: 240, y: 432 }, { x: 264, y: 420 }, { x: 264, y: 408 }, { x: 276, y: 396 },
-  { x: 276, y: 384 }, { x: 300, y: 360 }, { x: 300, y: 348 }, { x: 312, y: 348 }, { x: 324, y: 336 },
-  { x: 372, y: 336 }, { x: 384, y: 348 }, { x: 396, y: 348 }, { x: 432, y: 336 }, { x: 444, y: 324 },
-  { x: 456, y: 324 }, { x: 516, y: 264 }, { x: 528, y: 264 }, { x: 552, y: 240 }, { x: 588, y: 240 },
-  { x: 600, y: 228 }, { x: 672, y: 228 }, { x: 684, y: 216 }, { x: 696, y: 216 }, { x: 708, y: 204 }
+    {"x":370,"y":330},{"x":548,"y":330},{"x":649,"y":306},{"x":719,"y":335},
+    {"x":761,"y":306},{"x":760,"y":274},{"x":779,"y":269},{"x":799,"y":289},
+    {"x":827,"y":267},{"x":919,"y":267},{"x":994,"y":270},{"x":1068,"y":255},
+    {"x":1147,"y":255},{"x":1203,"y":267},{"x":1224,"y":291},{"x":1268,"y":282},
+    {"x":1328,"y":310},{"x":1324,"y":329},{"x":1338,"y":341},{"x":1371,"y":334},
+    {"x":1455,"y":390},{"x":1484,"y":407},{"x":1545,"y":433},{"x":1598,"y":457},
+    {"x":1636,"y":493},{"x":1653,"y":527},{"x":1653,"y":555},{"x":1646,"y":579},
+    {"x":1643,"y":601},{"x":1638,"y":625},{"x":1621,"y":654},{"x":1597,"y":657},
+    {"x":1590,"y":668},{"x":1590,"y":683},{"x":1559,"y":676},{"x":1550,"y":683},
+    {"x":1550,"y":709},{"x":1453,"y":757},{"x":1434,"y":760},{"x":1427,"y":765},
+    {"x":1391,"y":777},{"x":1273,"y":779},{"x":1230,"y":791},{"x":1201,"y":796},
+    {"x":1165,"y":810},{"x":1133,"y":827},{"x":1123,"y":804},{"x":1073,"y":801},
+    {"x":1059,"y":834},{"x":1049,"y":828},{"x":1018,"y":847},{"x":1001,"y":847},
+    {"x":951,"y":857},{"x":931,"y":866},{"x":888,"y":871},{"x":868,"y":883},
+    {"x":856,"y":895},{"x":833,"y":902},{"x":739,"y":902},{"x":597,"y":842},
+    {"x":589,"y":842},{"x":551,"y":820},{"x":539,"y":832},{"x":527,"y":816},
+    {"x":489,"y":823},{"x":484,"y":828},{"x":412,"y":772},{"x":347,"y":710},
+    {"x":334,"y":707},{"x":323,"y":674},{"x":303,"y":671},{"x":306,"y":659},
+    {"x":270,"y":630},{"x":240,"y":649},{"x":207,"y":597},{"x":187,"y":549},
+    {"x":187,"y":515},{"x":199,"y":505},{"x":197,"y":500},{"x":181,"y":488},
+    {"x":216,"y":469},{"x":217,"y":460},{"x":212,"y":457},{"x":250,"y":421},
+    {"x":243,"y":402},{"x":276,"y":401},{"x":284,"y":389},{"x":272,"y":375},
+    {"x":322,"y":351},{"x":334,"y":346}
 ];
 
 let currentState = "placement";
@@ -91,6 +90,8 @@ export const fishingScene = {
             case "result":
                 updateResult(deltaTime);
                 break;
+            case "debug":
+                updateDebug(deltaTime);
         }
     },
 
@@ -109,6 +110,9 @@ export const fishingScene = {
                 break;
             case "result":
                 drawResult(ctx);
+                break;
+            case "debug":
+                drawDebug(ctx);
                 break;
         }
     }
@@ -284,12 +288,61 @@ function drawResult(ctx) {
 
 // #endregion
 
+// #region DEBUG STATE
+
+const DEBUG_CURSOR_RADIUS = 2;
+const DEBUG_CURSOR_OUTLINE = 2;
+
+let debug_point_list = [];
+
+function updateDebug(deltaTime) {
+    if (mouseClicked) {
+        const mousePos = {x: Math.round(mouseX), y: Math.round(mouseY)};
+        debug_point_list.push(mousePos);
+    } else if (arrowPressed === "ArrowDown") {
+        debug_point_list.pop();
+    } else if (arrowPressed === "ArrowUp") {
+        console.log(JSON.stringify(debug_point_list));
+    }
+}
+
+function drawDebug(ctx) {
+    drawEnvironment(ctx);
+    drawDebugBorder(ctx);
+    drawDebugCursor(ctx);
+}
+
+function drawDebugBorder(ctx) {
+    if (debug_point_list.length < 2) return;
+
+    ctx.beginPath();
+    ctx.moveTo(debug_point_list[0].x, debug_point_list[0].y);
+    for (let i = 1; i < debug_point_list.length; i++) {
+        ctx.lineTo(debug_point_list[i].x, debug_point_list[i].y);
+    }
+
+    ctx.strokeStyle = "red";
+    ctx.stroke();
+}
+
+function drawDebugCursor(ctx) {
+    ctx.beginPath();
+    ctx.arc(mouseX, mouseY, DEBUG_CURSOR_RADIUS, 0, Math.PI * 2);
+
+    ctx.fillStyle = "white";
+    ctx.strokeStyle = "white";
+    ctx.lineWidth = DEBUG_CURSOR_OUTLINE;
+
+    ctx.fill();
+    ctx.stroke();
+}
+
+// #endregion
+
 // #region DRAW WORLD
 
 // enviroment
 
-const GRASS_COLOR = "#468255"
-const WATER_COLOR = "#4679df"
 const WATER_OUTLINE = 8;
 
 // catching
@@ -310,7 +363,7 @@ const BITE_INDICATOR_SPEED = 2;
 const BITE_INDICATOR_AMPLITUDE = 10;
 
 function drawEnvironment(ctx) {
-    ctx.drawImage(pondImage, 0, 0, ctx.canvas.width, ctx.canvas.height);
+    ctx.drawImage(POND, 0, 0);
 }
 
 function drawCursor(ctx) {
