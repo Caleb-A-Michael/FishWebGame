@@ -1,6 +1,7 @@
 import { mouseX, mouseY, mouseClicked, arrowPressed } from "../../core/input.js";
 import { drawSprite, drawPixelLine, drawTintedSprite } from "../../utils/draw.js";
 import { initDensityMapCanvas, startCatch, updateCatch } from "./catchSystem.js";
+import { money, addMoney } from "./shopSystem.js";
 import { loadWaterBoundary, isInWater, getLurePlacement } from "./waterGeometry.js";
 
 const POND = new Image();
@@ -12,6 +13,9 @@ const CURSOR_INVALID = new Image();
 CURSOR_INVALID.src = "../../assets/images/worldUI/cursor-invalid.png";
 const CATCH_ARROW_PROMPT = new Image();
 CATCH_ARROW_PROMPT.src = "../../assets/images/worldUI/catch-arrow-prompt.png";
+
+const SIDEBAR_BK = new Image();
+SIDEBAR_BK.src = "../../assets/images/sidebar/sidebarBk.png"
 
 const MINIGAME_BACKGROUND = new Image();
 MINIGAME_BACKGROUND.src = "../../assets/images/minigameUI/minigame-background.png"
@@ -97,6 +101,7 @@ export const fishingScene = {
 
     draw(ctx) {
         drawEnvironment(ctx);
+        drawSidebar(ctx);
 
         switch (currentState) {
             case "placement":
@@ -142,6 +147,10 @@ function drawPlacement(ctx) {
         drawLureCircle(ctx)
         drawFishingLine(ctx);
         drawAnchor(ctx);
+        drawCursor(ctx);
+    }
+
+    if (isMouseInWater || mouseX > POND.width) {
         drawCursor(ctx);
     } else {
         drawInvalidCursor(ctx);
@@ -190,7 +199,6 @@ function drawWaiting(ctx) {
     if (fishBiting !== null) {
         drawBiting(ctx);
     }
-    drawCursor(ctx);
 }
 
 // #endregion
@@ -255,12 +263,12 @@ function drawMinigame(ctx) {
 
 function startResult(type) {
     resultType = type;
-
     currentState = "result";
 }
 
 function updateResult(deltaTime) {
     if (mouseClicked) {
+        addMoney(fishBiting.worth);
         fishBiting = null;
         startPlacement();
     }
@@ -343,7 +351,9 @@ function drawDebugCursor(ctx) {
 
 // enviroment
 
-const WATER_OUTLINE = 8;
+const MONEY_Y = .1;
+const MONEY_FONT_SIZE = 80;
+const MONEY_BORDER_SIZE = 4;
 
 // catching
 
@@ -364,6 +374,24 @@ const BITE_INDICATOR_AMPLITUDE = 10;
 
 function drawEnvironment(ctx) {
     ctx.drawImage(POND, 0, 0);
+}
+
+function drawSidebar(ctx) {
+    ctx.drawImage(SIDEBAR_BK, POND.width, 0);
+
+    // money text
+
+    const SIDEBAR_MIDDLE_X = POND.width + (SIDEBAR_BK.width / 2);
+
+    ctx.fillStyle = "#ffffff";
+    ctx.textAlign = "center";
+    ctx.font = `bold ${MONEY_FONT_SIZE}px 'Courier New'`;
+
+    ctx.strokeStyle = "black";
+    ctx.lineWidth = MONEY_BORDER_SIZE;
+
+    ctx.fillText(`$${money}`, SIDEBAR_MIDDLE_X, ctx.canvas.height * MONEY_Y);
+    ctx.strokeText(`$${money}`, SIDEBAR_MIDDLE_X, ctx.canvas.height * MONEY_Y);
 }
 
 function drawCursor(ctx) {
@@ -465,6 +493,10 @@ const RESULT_FISH_FONT_SIZE = 160;
 const RESULT_FISH_BORDER_SIZE = 6;
 const RESULT_FISH_Y = 0.53;
 
+const RESULT_MONEY_FONT_SIZE = 120;
+const RESULT_MONEY_BORDER_SIZE = 4;
+const RESULT_MONEY_Y = 0.7;
+
 function drawMinigameBackground(ctx) {
     ctx.drawImage(MINIGAME_BACKGROUND, 0, 0, ctx.canvas.width, ctx.canvas.height);
 }
@@ -529,7 +561,7 @@ function drawArrows(ctx, failed) {
 }
 
 function drawSuccess(ctx) {
-    // Upper text
+    // upper text
     ctx.fillStyle = "#ffffff";
     ctx.textAlign = "center";
     ctx.font = `bold ${RESULT_UPPER_FONT_SIZE}px 'Courier New'`;
@@ -540,12 +572,20 @@ function drawSuccess(ctx) {
     ctx.fillText(RESULT_UPPER_TEXT, ctx.canvas.width / 2, ctx.canvas.height * RESULT_UPPER_Y);
     ctx.strokeText(RESULT_UPPER_TEXT, ctx.canvas.width / 2, ctx.canvas.height * RESULT_UPPER_Y);
 
-    // Fish text
+    // fish text
     ctx.lineWidth = RESULT_FISH_BORDER_SIZE;
 
     ctx.font = `800 ${RESULT_FISH_FONT_SIZE}px 'Courier New'`;
     ctx.fillText(fishBiting.name, ctx.canvas.width / 2, ctx.canvas.height * RESULT_FISH_Y);
     ctx.strokeText(fishBiting.name, ctx.canvas.width / 2, ctx.canvas.height * RESULT_FISH_Y);
+
+    // money text
+    ctx.lineWidth = RESULT_FISH_BORDER_SIZE;
+
+    ctx.font = `bold ${RESULT_FISH_FONT_SIZE}px 'Courier New'`;
+    ctx.fillText(`+$${fishBiting.worth}`, ctx.canvas.width / 2, ctx.canvas.height * RESULT_MONEY_Y);
+    ctx.strokeText(`+$${fishBiting.worth}`, ctx.canvas.width / 2, ctx.canvas.height * RESULT_MONEY_Y);
+
 }
 
 // #endregion
