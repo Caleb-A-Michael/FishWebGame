@@ -1,7 +1,7 @@
 import { mouseX, mouseY, mouseClicked, arrowPressed } from "../../core/input.js";
 import { drawSprite, drawPixelLine, drawTintedSprite } from "../../utils/draw.js";
 import { initDensityMapCanvas, startCatch, updateCatch } from "./catchSystem.js";
-import { money, addMoney } from "./shopSystem.js";
+import { addMoney, getMoney, initializeMoney } from "./shopSystem.js";
 import { loadWaterBoundary, isInWater, getLurePlacement } from "./waterGeometry.js";
 
 const POND = new Image();
@@ -76,6 +76,7 @@ export const fishingScene = {
     onEnter(ctx) {
         loadWaterBoundary({ boundaryPoints: WATER_BOUNDARY });
         initDensityMapCanvas(ctx.canvas.width, ctx.canvas.height);
+        initializeMoney();
     },
 
     update(deltaTime) {
@@ -224,6 +225,9 @@ function updateMinigame(deltaTime) {
     if (minigameTimer <= 0) startResult("timeout");
 
     if (arrowPressed && arrowPressed !== null) {
+        if (arrowPressed === "OtherKey") {
+            return;
+        }
         if (arrowPressed === arrowSequence[currentArrowIndex]) {
             currentArrowIndex++;
             if (currentArrowIndex >= arrowSequence.length) startResult("successful");
@@ -268,7 +272,9 @@ function startResult(type) {
 
 function updateResult(deltaTime) {
     if (mouseClicked) {
-        addMoney(fishBiting.worth);
+        if (resultType === "successful") {
+            addMoney(fishBiting.worth);
+        }
         fishBiting = null;
         startPlacement();
     }
@@ -390,6 +396,7 @@ function drawSidebar(ctx) {
     ctx.strokeStyle = "black";
     ctx.lineWidth = MONEY_BORDER_SIZE;
 
+    const money = getMoney();
     ctx.fillText(`$${money}`, SIDEBAR_MIDDLE_X, ctx.canvas.height * MONEY_Y);
     ctx.strokeText(`$${money}`, SIDEBAR_MIDDLE_X, ctx.canvas.height * MONEY_Y);
 }
