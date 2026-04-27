@@ -1,7 +1,8 @@
 import { mouseX, mouseY, mouseClicked, arrowPressed } from "../../core/input.js";
 import { drawSprite, drawPixelLine, drawTintedSprite } from "../../utils/draw.js";
+import { drawButton, isInButton } from "../../utils/UI.js";
 import { initDensityMapCanvas, startCatch, updateCatch } from "./catchSystem.js";
-import { addMoney, getMoney, initializeMoney } from "./shopSystem.js";
+import { addMoney, getMoney, initializeMoney, spendMoney } from "./shopSystem.js";
 import { loadWaterBoundary, isInWater, getLurePlacement } from "./waterGeometry.js";
 
 const POND = new Image();
@@ -15,7 +16,11 @@ const CATCH_ARROW_PROMPT = new Image();
 CATCH_ARROW_PROMPT.src = "../../assets/images/worldUI/catch-arrow-prompt.png";
 
 const SIDEBAR_BK = new Image();
-SIDEBAR_BK.src = "../../assets/images/sidebar/sidebarBk.png"
+SIDEBAR_BK.src = "../../assets/images/sidebar/sidebar-bk.png";
+const MONEY_ICON = new Image();
+MONEY_ICON.src = "../../assets/images/sidebar/money-icon.png";
+const SHOP_BUTTON = new Image();
+SHOP_BUTTON.src = "../../assets/images/sidebar/shop-button.png";
 
 const MINIGAME_BACKGROUND = new Image();
 MINIGAME_BACKGROUND.src = "../../assets/images/minigameUI/minigame-background.png"
@@ -27,6 +32,11 @@ const MINIGAME_ARROW_LEFT = new Image();
 MINIGAME_ARROW_LEFT.src = "../../assets/images/minigameUI/minigame-arrow-left.png";
 const MINIGAME_ARROW_RIGHT = new Image();
 MINIGAME_ARROW_RIGHT.src = "../../assets/images/minigameUI/minigame-arrow-right.png";
+
+const ROD_SHOP = new Image();
+ROD_SHOP.src = "../../assets/images/shopUI/rod-shop.png";
+const UPGRADE_BUTTON = new Image();
+UPGRADE_BUTTON.src = "../../assets/images/shopUI/upgrade-button.png";
 
 const pondImage = new Image();
 pondImage.src = "../../assets/images/placeholderPond.png";
@@ -74,9 +84,21 @@ let currentState = "placement";
 
 export const fishingScene = {
     onEnter(ctx) {
+        //localStorage.setItem('rod_level', 0);
+        //localStorage.setItem('money', 100);
+
         loadWaterBoundary({ boundaryPoints: WATER_BOUNDARY });
         initDensityMapCanvas(ctx.canvas.width, ctx.canvas.height);
         initializeMoney();
+
+        rodLvl = localStorage.getItem('rod_level');
+        if (rodLvl !== null) {
+        rodLvl = parseInt(rodLvl, 10); 
+        } else {
+        rodLvl = 0;
+        }
+
+        cast_distance = CAST_DISTANCES[rodLvl];
     },
 
     update(deltaTime) {
@@ -95,8 +117,12 @@ export const fishingScene = {
             case "result":
                 updateResult(deltaTime);
                 break;
+            case "shop":
+                updateShop(deltaTime);
+                break;
             case "debug":
                 updateDebug(deltaTime);
+                break;
         }
     },
 
@@ -117,6 +143,9 @@ export const fishingScene = {
             case "result":
                 drawResult(ctx);
                 break;
+            case "shop":
+                drawShop(ctx);
+                break;
             case "debug":
                 drawDebug(ctx);
                 break;
@@ -126,7 +155,7 @@ export const fishingScene = {
 
 // #region PLACEMENT STATE
 
-const MAX_CAST_DISTANCE = 100;
+let cast_distance = 0;
 
 let lurePos = { x: 0, y: 0 };
 let closestPointOnShore = null;
@@ -134,12 +163,20 @@ let isMouseInWater = false;
 
 function startPlacement() {
     currentState = "placement";
+
+    cast_distance = CAST_DISTANCES[rodLvl];
 }
 
 function updatePlacement(deltaTime) {
     if (isMouseInWater) {
-        ({ lurePos, closestPointOnShore } = getLurePlacement(mouseX, mouseY, MAX_CAST_DISTANCE));
+        ({ lurePos, closestPointOnShore } = getLurePlacement(mouseX, mouseY, cast_distance));
         if (mouseClicked) startWaiting();
+    } else if (mouseClicked) {
+        const SIDEBAR_MIDDLE_X = POND.width + (SIDEBAR_BK.width / 2);
+        const canvas = document.getElementById("gameCanvas");
+        if (isInButton(mouseX, mouseY, SIDEBAR_MIDDLE_X, SHOP_BUTTON_Y * canvas.height, SHOP_BUTTON)) {
+            startShop();
+        }
     }
 }
 
@@ -302,6 +339,79 @@ function drawResult(ctx) {
 
 // #endregion
 
+// #region SHOP STATE
+
+const CAST_DISTANCES = [60, 90, 120, 150, 170, 200, 230]
+const UPGRADE_COSTS = [10, 15, 25, 50, 100, 200, 250];
+
+// cords are in px!!
+const UPGRADE_BUTTON_PX_X = 476;
+const UPGRADE_BUTTON_PX_Y = 569;
+
+const UPGRADE_COST_PX_X = 1020;
+const UPGRADE_COST_PX_Y = 590;
+const UPGRADE_COST_FONT_SIZE = 100;
+const UPGRADE_COST_BORDER_SIZE = 6;
+
+let rodLvl = 0;
+let upgradeCost = 0;
+
+function startShop() {
+    currentState = "shop";
+    console.log(rodLvl);
+}
+
+function updateShop(deltaTime) {
+    upgradeCost = UPGRADE_COSTS[rodLvl];
+
+    if (mouseClicked) {
+        if (isInButton(mouseX, mouseY, UPGRADE_BUTTON_PX_X, UPGRADE_BUTTON_PX_Y, UPGRADE_BUTTON)) {
+            if (spendMoney(upgradeCost)) {
+                rodLvl++;
+                localStorage.setItem('rod_level', rodLvl);
+            }
+        }
+
+        const SIDEBAR_MIDDLE_X = POND.width + (SIDEBAR_BK.width / 2);
+        const canvas = document.getElementById("gameCanvas");
+        if (isInButton(mouseX, mouseY, SIDEBAR_MIDDLE_X, SHOP_BUTTON_Y * canvas.height, SHOP_BUTTON)) {
+            startPlacement();
+        }
+    }
+}
+
+function drawShop(ctx) {
+    drawRodShopBk(ctx);
+    drawUpgradeButton(ctx);
+    drawUpgradeCost(ctx);
+
+    drawCursor(ctx);
+}
+
+function drawRodShopBk(ctx) {
+    drawSprite(ctx, ROD_SHOP, POND.width / 2, ctx.canvas.height / 2);
+}
+
+function drawUpgradeButton(ctx) {
+    drawButton(ctx, mouseX, mouseY, UPGRADE_BUTTON, UPGRADE_BUTTON_PX_X, UPGRADE_BUTTON_PX_Y);
+}
+
+function drawUpgradeCost(ctx) {
+    // upper text
+    ctx.fillStyle = "#ffffff";
+    ctx.textAlign = "center";
+    ctx.font = `800 ${UPGRADE_COST_FONT_SIZE}px 'Courier New'`;
+
+    ctx.strokeStyle = "black";
+    ctx.lineWidth = UPGRADE_COST_BORDER_SIZE;
+
+    ctx.fillText(`$${upgradeCost}`, UPGRADE_COST_PX_X, UPGRADE_COST_PX_Y);
+    ctx.strokeText(`$${upgradeCost}`, UPGRADE_COST_PX_X, UPGRADE_COST_PX_Y);
+
+}
+
+// #endregion
+
 // #region DEBUG STATE
 
 const DEBUG_CURSOR_RADIUS = 2;
@@ -355,12 +465,6 @@ function drawDebugCursor(ctx) {
 
 // #region DRAW WORLD
 
-// enviroment
-
-const MONEY_Y = .1;
-const MONEY_FONT_SIZE = 80;
-const MONEY_BORDER_SIZE = 4;
-
 // catching
 
 const CURSOR_RADIUS = 14;
@@ -380,25 +484,6 @@ const BITE_INDICATOR_AMPLITUDE = 10;
 
 function drawEnvironment(ctx) {
     ctx.drawImage(POND, 0, 0);
-}
-
-function drawSidebar(ctx) {
-    ctx.drawImage(SIDEBAR_BK, POND.width, 0);
-
-    // money text
-
-    const SIDEBAR_MIDDLE_X = POND.width + (SIDEBAR_BK.width / 2);
-
-    ctx.fillStyle = "#ffffff";
-    ctx.textAlign = "center";
-    ctx.font = `bold ${MONEY_FONT_SIZE}px 'Courier New'`;
-
-    ctx.strokeStyle = "black";
-    ctx.lineWidth = MONEY_BORDER_SIZE;
-
-    const money = getMoney();
-    ctx.fillText(`$${money}`, SIDEBAR_MIDDLE_X, ctx.canvas.height * MONEY_Y);
-    ctx.strokeText(`$${money}`, SIDEBAR_MIDDLE_X, ctx.canvas.height * MONEY_Y);
 }
 
 function drawCursor(ctx) {
@@ -470,6 +555,50 @@ function drawAnchor(ctx) {
 function drawBiting(ctx) {
     let yOffset = BITE_INDICATOR_OFFSET + Math.sin(indictorBobTimer * BITE_INDICATOR_SPEED) * BITE_INDICATOR_AMPLITUDE;
     drawSprite(ctx, CATCH_ARROW_PROMPT, lurePos.x, Math.round(lurePos.y) - yOffset);
+}
+
+// #endregion
+
+// #region DRAW SIDEBAR
+
+const MONEY_ICON_Y = .1;
+const MONEY_TEXT_Y = .12;
+const MONEY_FONT_SIZE = 80;
+const MONEY_BORDER_SIZE = 4;
+
+const SHOP_BUTTON_Y = .25;
+
+function drawSidebar(ctx) {
+    ctx.drawImage(SIDEBAR_BK, POND.width, 0);
+
+    drawSidebarMoney(ctx);
+    drawSidebarShopButton(ctx);
+}
+
+function drawSidebarMoney(ctx) {
+    const SIDEBAR_MIDDLE_X = POND.width + (SIDEBAR_BK.width / 2);
+
+    drawSprite(ctx, MONEY_ICON, SIDEBAR_MIDDLE_X, ctx.canvas.height * MONEY_ICON_Y);
+
+    ctx.fillStyle = "#ffffff";
+    ctx.textAlign = "center";
+    ctx.font = `800 ${MONEY_FONT_SIZE}px 'Courier New'`;
+
+    ctx.strokeStyle = "black";
+    ctx.lineWidth = MONEY_BORDER_SIZE;
+
+    const money = getMoney();
+    ctx.fillText(`${money}`, SIDEBAR_MIDDLE_X, ctx.canvas.height * MONEY_TEXT_Y);
+    ctx.strokeText(`${money}`, SIDEBAR_MIDDLE_X, ctx.canvas.height * MONEY_TEXT_Y);
+}
+
+function drawSidebarShopButton(ctx) {
+    const SIDEBAR_MIDDLE_X = POND.width + (SIDEBAR_BK.width / 2);
+    if (currentState === "placement" || currentState === "shop") {
+        drawButton(ctx, mouseX, mouseY, SHOP_BUTTON, SIDEBAR_MIDDLE_X, SHOP_BUTTON_Y * ctx.canvas.height);
+    } else {
+        drawSprite(ctx, SHOP_BUTTON, SIDEBAR_MIDDLE_X, SHOP_BUTTON_Y * ctx.canvas.height);
+    }
 }
 
 // #endregion

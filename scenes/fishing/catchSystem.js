@@ -104,6 +104,11 @@ function rollFish() {
         });
     }
 
+    // Guard agaisnt zero-roll glitch
+    if (cumulative === 0) {
+        location.reload();
+    }
+
     // add const chance of no fish
     cumulative += NO_BITE_WEIGHT;
     entries.push({

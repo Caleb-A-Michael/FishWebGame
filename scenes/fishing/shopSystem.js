@@ -1,7 +1,7 @@
 let money = 0;
 
 export function initializeMoney() {
-    const prevMoney = localStorage.getItem("money");
+    const prevMoney = localStorage.getItem('money');
     if (prevMoney !== null) {
         money = parseInt(prevMoney, 10); 
     } else {
@@ -16,4 +16,12 @@ export function getMoney() {
 export function addMoney(amount) {
     money += amount;
     localStorage.setItem('money', money);
+}
+
+export function spendMoney(amount) {
+    if (amount > money) return false;
+
+    money -= amount;
+    localStorage.setItem('money', money);
+    return true;
 }
