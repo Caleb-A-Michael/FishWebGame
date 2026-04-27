@@ -13,7 +13,7 @@ export const FISH = {
         densityMap: "center",
         catchSequence: "dhdhdad",
         catchTime: 5,
-        worth: 3
+        worth: 4
     },
     MossPerch: {
         name: "Moss Perch",
@@ -29,6 +29,6 @@ export const FISH = {
         densityMap: "right",
         catchSequence: "rrrrrrr",
         catchTime: 2,
-        worth: 4
+        worth: 3
     }
 };

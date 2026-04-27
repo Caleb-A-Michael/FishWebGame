@@ -3,10 +3,14 @@ import { drawSprite, drawPixelLine, drawTintedSprite } from "../../utils/draw.js
 import { drawButton, isInButton } from "../../utils/UI.js";
 import { initDensityMapCanvas, startCatch, updateCatch } from "./catchSystem.js";
 import { addMoney, getMoney, initializeMoney, spendMoney } from "./shopSystem.js";
-import { loadWaterBoundary, isInWater, getLurePlacement } from "./waterGeometry.js";
+import { isInWater, getLurePlacement } from "./waterGeometry.js";
 
 const POND = new Image();
 POND.src = "../../assets/images/enviroment/pond.png";
+const BOBBER_FLOATING = new Image();
+BOBBER_FLOATING.src = "../../assets/images/enviroment/bobber-floating.png";
+const BOBBER_SUNK = new Image();
+BOBBER_SUNK.src = "../../assets/images/enviroment/bobber-sunk.png";
 
 const CURSOR_VALID = new Image();
 CURSOR_VALID.src = "../../assets/images/worldUI/cursor-valid.png";
@@ -38,66 +42,20 @@ ROD_SHOP.src = "../../assets/images/shopUI/rod-shop.png";
 const UPGRADE_BUTTON = new Image();
 UPGRADE_BUTTON.src = "../../assets/images/shopUI/upgrade-button.png";
 
-const pondImage = new Image();
-pondImage.src = "../../assets/images/placeholderPond.png";
-
-const anchorImage = new Image();
-anchorImage.src = "../../assets/images/fishingLineAnchor.png";
-const lureRingImage = new Image();
-lureRingImage.src = "../../assets/images/lureRing.png";
-const bobberFloating = new Image();
-bobberFloating.src = "../../assets/images/bobberFloating.png";
-const bobberSank = new Image();
-bobberSank.src = "../../assets/images/bobberSank.png";
-const bitingIndicator = new Image();
-bitingIndicator.src = "../../assets/images/bitingIndicator.png";
-
-
-// Water boundaries (pixel cords)
-const WATER_BOUNDARY = [
-    {"x":370,"y":330},{"x":548,"y":330},{"x":649,"y":306},{"x":719,"y":335},
-    {"x":761,"y":306},{"x":760,"y":274},{"x":779,"y":269},{"x":799,"y":289},
-    {"x":827,"y":267},{"x":919,"y":267},{"x":994,"y":270},{"x":1068,"y":255},
-    {"x":1147,"y":255},{"x":1203,"y":267},{"x":1224,"y":291},{"x":1268,"y":282},
-    {"x":1328,"y":310},{"x":1324,"y":329},{"x":1338,"y":341},{"x":1371,"y":334},
-    {"x":1455,"y":390},{"x":1484,"y":407},{"x":1545,"y":433},{"x":1598,"y":457},
-    {"x":1636,"y":493},{"x":1653,"y":527},{"x":1653,"y":555},{"x":1646,"y":579},
-    {"x":1643,"y":601},{"x":1638,"y":625},{"x":1621,"y":654},{"x":1597,"y":657},
-    {"x":1590,"y":668},{"x":1590,"y":683},{"x":1559,"y":676},{"x":1550,"y":683},
-    {"x":1550,"y":709},{"x":1453,"y":757},{"x":1434,"y":760},{"x":1427,"y":765},
-    {"x":1391,"y":777},{"x":1273,"y":779},{"x":1230,"y":791},{"x":1201,"y":796},
-    {"x":1165,"y":810},{"x":1133,"y":827},{"x":1123,"y":804},{"x":1073,"y":801},
-    {"x":1059,"y":834},{"x":1049,"y":828},{"x":1018,"y":847},{"x":1001,"y":847},
-    {"x":951,"y":857},{"x":931,"y":866},{"x":888,"y":871},{"x":868,"y":883},
-    {"x":856,"y":895},{"x":833,"y":902},{"x":739,"y":902},{"x":597,"y":842},
-    {"x":589,"y":842},{"x":551,"y":820},{"x":539,"y":832},{"x":527,"y":816},
-    {"x":489,"y":823},{"x":484,"y":828},{"x":412,"y":772},{"x":347,"y":710},
-    {"x":334,"y":707},{"x":323,"y":674},{"x":303,"y":671},{"x":306,"y":659},
-    {"x":270,"y":630},{"x":240,"y":649},{"x":207,"y":597},{"x":187,"y":549},
-    {"x":187,"y":515},{"x":199,"y":505},{"x":197,"y":500},{"x":181,"y":488},
-    {"x":216,"y":469},{"x":217,"y":460},{"x":212,"y":457},{"x":250,"y":421},
-    {"x":243,"y":402},{"x":276,"y":401},{"x":284,"y":389},{"x":272,"y":375},
-    {"x":322,"y":351},{"x":334,"y":346}
-];
-
 let currentState = "placement";
 
 export const fishingScene = {
     onEnter(ctx) {
-        //localStorage.setItem('rod_level', 0);
-        //localStorage.setItem('money', 100);
-
-        loadWaterBoundary({ boundaryPoints: WATER_BOUNDARY });
         initDensityMapCanvas(ctx.canvas.width, ctx.canvas.height);
         initializeMoney();
 
+        // load rodLvl
         rodLvl = localStorage.getItem('rod_level');
         if (rodLvl !== null) {
-        rodLvl = parseInt(rodLvl, 10); 
+            rodLvl = parseInt(rodLvl, 10); 
         } else {
-        rodLvl = 0;
+            rodLvl = 0;
         }
-
         cast_distance = CAST_DISTANCES[rodLvl];
     },
 
@@ -341,7 +299,7 @@ function drawResult(ctx) {
 
 // #region SHOP STATE
 
-const CAST_DISTANCES = [60, 90, 120, 150, 170, 200, 230]
+const CAST_DISTANCES = [80, 120, 160, 200, 240, 280]
 const UPGRADE_COSTS = [10, 15, 25, 50, 100, 200, 250];
 
 // cords are in px!!
@@ -534,9 +492,9 @@ function drawLureCircle(ctx) {
 
 function drawBobber(ctx) {
     if (fishBiting) {
-        drawSprite(ctx, bobberSank, lurePos.x, lurePos.y);
+        drawSprite(ctx, BOBBER_SUNK, lurePos.x, lurePos.y);
     } else {
-        drawSprite(ctx, bobberFloating, lurePos.x, lurePos.y);
+        drawSprite(ctx, BOBBER_FLOATING, lurePos.x, lurePos.y);
     }
 }
 
