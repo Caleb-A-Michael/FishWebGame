@@ -161,7 +161,7 @@ const BITING_RESPONSE_TIME = 15;
 
 let bitingTimer = 0;
 let fishBiting = null;
-let indictorBobTimer = 0;
+let animationTimer = 0;
 
 function startWaiting() {
     // Sets wait timer to an int between min and max
@@ -171,7 +171,7 @@ function startWaiting() {
 }
 
 function updateWaiting(deltaTime) {
-    indictorBobTimer += deltaTime; 
+    animationTimer += deltaTime; 
 
     if (fishBiting === null) {
         fishBiting = updateCatch(deltaTime);
@@ -266,6 +266,8 @@ function startResult(type) {
 }
 
 function updateResult(deltaTime) {
+    animationTimer += deltaTime; 
+
     if (mouseClicked) {
         if (resultType === "successful") {
             addMoney(fishBiting.worth);
@@ -299,7 +301,7 @@ function drawResult(ctx) {
 
 // #region SHOP STATE
 
-const CAST_DISTANCES = [80, 120, 160, 200, 240, 280]
+const CAST_DISTANCES = [60, 100, 140, 180, 220, 260]
 const UPGRADE_COSTS = [10, 15, 25, 50, 100, 200, 250];
 
 // cords are in px!!
@@ -511,7 +513,7 @@ function drawAnchor(ctx) {
 }
 
 function drawBiting(ctx) {
-    let yOffset = BITE_INDICATOR_OFFSET + Math.sin(indictorBobTimer * BITE_INDICATOR_SPEED) * BITE_INDICATOR_AMPLITUDE;
+    let yOffset = BITE_INDICATOR_OFFSET + Math.sin(animationTimer * BITE_INDICATOR_SPEED) * BITE_INDICATOR_AMPLITUDE;
     drawSprite(ctx, CATCH_ARROW_PROMPT, lurePos.x, Math.round(lurePos.y) - yOffset);
 }
 
@@ -581,15 +583,20 @@ const RESULT_UPPER_TEXT = "Congrats, you caught a"
 
 const RESULT_UPPER_FONT_SIZE = 120;
 const RESULT_UPPER_BORDER_SIZE = 4;
-const RESULT_UPPER_Y = 0.2;
+const RESULT_UPPER_Y = 0.25;
 
 const RESULT_FISH_FONT_SIZE = 160;
-const RESULT_FISH_BORDER_SIZE = 6;
+const RESULT_FISH_BORDER_SIZE = 8;
 const RESULT_FISH_Y = 0.53;
+const RESULT_FISH_SPEED = -2;
+const RESULT_FISH_AMPLITUDE = 5;
 
-const RESULT_MONEY_FONT_SIZE = 120;
+const RESULT_MONEY_FONT_SIZE = 160;
 const RESULT_MONEY_BORDER_SIZE = 4;
-const RESULT_MONEY_Y = 0.7;
+const RESULT_MONEY_Y = 0.75;
+const RESULT_MONEY_COLOR = "#ffea00";
+const RESULT_MONEY_SPEED = 2;
+const RESULT_MONEY_AMPLITUDE = 7.5;
 
 function drawMinigameBackground(ctx) {
     ctx.drawImage(MINIGAME_BACKGROUND, 0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -667,18 +674,26 @@ function drawSuccess(ctx) {
     ctx.strokeText(RESULT_UPPER_TEXT, ctx.canvas.width / 2, ctx.canvas.height * RESULT_UPPER_Y);
 
     // fish text
+    let y = (RESULT_FISH_Y * ctx.canvas.height) + Math.sin(animationTimer * RESULT_FISH_SPEED) * RESULT_FISH_AMPLITUDE;
+
     ctx.lineWidth = RESULT_FISH_BORDER_SIZE;
 
+    ctx.fillStyle = fishBiting.mainColor;
+    ctx.strokeStyle = fishBiting.secondaryColor;
     ctx.font = `800 ${RESULT_FISH_FONT_SIZE}px 'Courier New'`;
-    ctx.fillText(fishBiting.name, ctx.canvas.width / 2, ctx.canvas.height * RESULT_FISH_Y);
-    ctx.strokeText(fishBiting.name, ctx.canvas.width / 2, ctx.canvas.height * RESULT_FISH_Y);
+    ctx.fillText(fishBiting.name, ctx.canvas.width / 2, y);
+    ctx.strokeText(fishBiting.name, ctx.canvas.width / 2, y);
 
     // money text
+    let pulse = RESULT_MONEY_FONT_SIZE + Math.sin(animationTimer * RESULT_MONEY_SPEED) * RESULT_MONEY_AMPLITUDE;
+
+    ctx.fillStyle = RESULT_MONEY_COLOR;
+    ctx.strokeStyle = "#000000";
     ctx.lineWidth = RESULT_FISH_BORDER_SIZE;
 
-    ctx.font = `bold ${RESULT_FISH_FONT_SIZE}px 'Courier New'`;
-    ctx.fillText(`+$${fishBiting.worth}`, ctx.canvas.width / 2, ctx.canvas.height * RESULT_MONEY_Y);
-    ctx.strokeText(`+$${fishBiting.worth}`, ctx.canvas.width / 2, ctx.canvas.height * RESULT_MONEY_Y);
+    ctx.font = `bold ${pulse}px 'Courier New'`;
+    ctx.fillText(`+$${fishBiting.worth}`, ctx.canvas.width / 2, RESULT_MONEY_Y * ctx.canvas.height);
+    ctx.strokeText(`+$${fishBiting.worth}`, ctx.canvas.width / 2, RESULT_MONEY_Y * ctx.canvas.height);
 
 }
 
