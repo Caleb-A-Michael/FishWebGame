@@ -6,19 +6,16 @@ const MIN_BITE_TIME = 2;
 const NO_BITE_WEIGHT = 1.5;
 
 const SHORE_DM = new Image();
-SHORE_DM.src = '../../assets/images/densityMaps/testDensityShore.png';
-const CENTER_DM = new Image();
-CENTER_DM.src = '../../assets/images/densityMaps/testDensityCenter.png';
-const RIGHT_DM = new Image();
-RIGHT_DM.src = '../../assets/images/densityMaps/testDensityRight.png';
-const CONSISTENT_DM = new Image();
-CONSISTENT_DM.src = '../../assets/images/densityMaps/testDensityConsistent.png';
+SHORE_DM.src = '../../assets/images/densityMaps/shore-density.png';
+const SHORE_ROCKS_DM = new Image();
+SHORE_ROCKS_DM.src = '../../assets/images/densityMaps/shore-rocks-density.png';
+const PLANTS_DM = new Image();
+PLANTS_DM.src = '../../assets/images/densityMaps/plants-density.png';
 
 const DENSITY_MAPS = {
     shore: SHORE_DM,
-    center: CENTER_DM,
-    right: RIGHT_DM,
-    consistent: CONSISTENT_DM
+    shore_rocks: SHORE_ROCKS_DM,
+    plants: PLANTS_DM,
 };
 
 let densityMapCanvas = null;
@@ -27,10 +24,12 @@ let scaleX = 0;
 let scaleY = 0;
 
 export function initDensityMapCanvas(gameCanvasWidth, gameCanvasHeight) {
+    
+
     densityMapCanvas = document.createElement('canvas');
     densityMapCtx = densityMapCanvas.getContext('2d', {willReadFrequently: true});
-    densityMapCanvas.width = CONSISTENT_DM.width;
-    densityMapCanvas.height = CONSISTENT_DM.height;
+    densityMapCanvas.width = SHORE_DM.width;
+    densityMapCanvas.height = SHORE_DM.height;
 
     scaleX = densityMapCanvas.width / gameCanvasWidth;
     scaleY = densityMapCanvas.height / gameCanvasHeight;

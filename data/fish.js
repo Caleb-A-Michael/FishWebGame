@@ -2,41 +2,31 @@ export const FISH = {
     BananaFruitFish: {
         name: "Banana FruitFish",
         frequency: 1,
-        densityMap: "consistent",
+        densityMap: "plants",
         catchSequence: "uhhhu",
         catchTime: 3,
         worth: 1,
         mainColor: "#ffee00",
-        secondaryColor: "#000000"
+        secondaryColor: "#2e5221"
     },
     GumdropGuppy: {
         name: "Gumdrop Guppy",
         frequency: 1.5,
-        densityMap: "center",
+        densityMap: "shore",
         catchSequence: "dhdhdad",
         catchTime: 5,
-        worth: 4,
+        worth: 2,
         mainColor: "#cf36ba",
-        secondaryColor: "#000000"
+        secondaryColor: "#6c0725"
     },
     MossPerch: {
         name: "Moss Perch",
         frequency: 1.5,
-        densityMap: "shore",
+        densityMap: "shore_rocks",
         catchSequence: "aaaaa",
         catchTime: 4,
         worth: 2,
         mainColor: "#4a9b3e",
-        secondaryColor: "#000000"
-    },
-    RightFinnedWalleye: {
-        name: "Right-Finned Walleye",
-        frequency: .6,
-        densityMap: "right",
-        catchSequence: "rrrrrrr",
-        catchTime: 2,
-        worth: 3,
-        mainColor: "#ffffff",
-        secondaryColor: "#000000"
+        secondaryColor: "#383838"
     }
 };
