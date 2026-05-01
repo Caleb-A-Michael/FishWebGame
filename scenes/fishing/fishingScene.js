@@ -301,14 +301,14 @@ function drawResult(ctx) {
 
 // #region SHOP STATE
 
-const CAST_DISTANCES = [60, 100, 140, 180, 220, 260]
-const UPGRADE_COSTS = [10, 15, 25, 50, 100, 200, 250];
+const CAST_DISTANCES = [60, 100]
+const UPGRADE_COSTS = [10];
 
 // cords are in px!!
 const UPGRADE_BUTTON_PX_X = 476;
 const UPGRADE_BUTTON_PX_Y = 569;
 
-const UPGRADE_COST_PX_X = 1020;
+const UPGRADE_COST_PX_X = 1030;
 const UPGRADE_COST_PX_Y = 590;
 const UPGRADE_COST_FONT_SIZE = 100;
 const UPGRADE_COST_BORDER_SIZE = 6;
@@ -326,6 +326,9 @@ function updateShop(deltaTime) {
 
     if (mouseClicked) {
         if (isInButton(mouseX, mouseY, UPGRADE_BUTTON_PX_X, UPGRADE_BUTTON_PX_Y, UPGRADE_BUTTON)) {
+            if (rodLvl >= UPGRADE_COSTS.length) {
+                return;
+            }
             if (spendMoney(upgradeCost)) {
                 rodLvl++;
                 localStorage.setItem('rod_level', rodLvl);
@@ -365,8 +368,10 @@ function drawUpgradeCost(ctx) {
     ctx.strokeStyle = "black";
     ctx.lineWidth = UPGRADE_COST_BORDER_SIZE;
 
-    ctx.fillText(`$${upgradeCost}`, UPGRADE_COST_PX_X, UPGRADE_COST_PX_Y);
-    ctx.strokeText(`$${upgradeCost}`, UPGRADE_COST_PX_X, UPGRADE_COST_PX_Y);
+    let text = (rodLvl < UPGRADE_COSTS.length) ? `$${upgradeCost}` : "MAX";
+
+    ctx.fillText(text, UPGRADE_COST_PX_X, UPGRADE_COST_PX_Y);
+    ctx.strokeText(text, UPGRADE_COST_PX_X, UPGRADE_COST_PX_Y);
 
 }
 
