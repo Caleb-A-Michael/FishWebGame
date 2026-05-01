@@ -4,6 +4,7 @@ import { drawButton, isInButton } from "../../utils/UI.js";
 import { initDensityMapCanvas, startCatch, updateCatch } from "./catchSystem.js";
 import { addMoney, getMoney, initializeMoney, spendMoney } from "./shopSystem.js";
 import { isInWater, getLurePlacement } from "./waterGeometry.js";
+import { FISH } from "../../data/fish.js";
 
 const POND = new Image();
 POND.src = "../../assets/images/enviroment/pond.png";
@@ -25,6 +26,8 @@ const MONEY_ICON = new Image();
 MONEY_ICON.src = "../../assets/images/sidebar/money-icon.png";
 const SHOP_BUTTON = new Image();
 SHOP_BUTTON.src = "../../assets/images/sidebar/shop-button.png";
+const FISH_DISCOVERED = new Image();
+FISH_DISCOVERED.src = "../../assets/images/sidebar/fish-discovered.png";
 
 const MINIGAME_BACKGROUND = new Image();
 MINIGAME_BACKGROUND.src = "../../assets/images/minigameUI/minigame-background.png"
@@ -57,6 +60,14 @@ export const fishingScene = {
             rodLvl = 0;
         }
         cast_distance = CAST_DISTANCES[rodLvl];
+        
+        // load fish discovered
+        fishDiscovered = localStorage.getItem('discovered');
+        if (fishDiscovered !== null) {
+            fishDiscovered = parseInt(fishDiscovered, 10); 
+        } else {
+            fishDiscovered = 0;
+        }
     },
 
     update(deltaTime) {
@@ -260,9 +271,21 @@ function drawMinigame(ctx) {
 
 // #region RESULT STATE
 
+let isFishNew = false;
+let fishDiscovered = 0;
+
 function startResult(type) {
     resultType = type;
     currentState = "result";
+
+    if (resultType === "successful") {
+        if (localStorage.getItem(`${fishBiting.name}`) === null) {
+            isFishNew = true;
+            localStorage.setItem(`${fishBiting.name}`, true);
+        } else {
+            isFishNew = false;
+        }
+    }
 }
 
 function updateResult(deltaTime) {
@@ -271,6 +294,11 @@ function updateResult(deltaTime) {
     if (mouseClicked) {
         if (resultType === "successful") {
             addMoney(fishBiting.worth);
+
+            if (isFishNew) {
+                fishDiscovered++;
+                localStorage.setItem('discovered', fishDiscovered);
+            }
         }
         fishBiting = null;
         startPlacement();
@@ -526,22 +554,29 @@ function drawBiting(ctx) {
 
 // #region DRAW SIDEBAR
 
-const MONEY_ICON_Y = .1;
+const SIDEBAR_MIDDLE_X_OFFSET = 4;
+
+const MONEY_ICON_Y = .10;
 const MONEY_TEXT_Y = .12;
 const MONEY_FONT_SIZE = 80;
 const MONEY_BORDER_SIZE = 4;
 
-const SHOP_BUTTON_Y = .25;
+const SHOP_BUTTON_Y = .29;
+
+const FISH_DISCOVERED_Y = .6;
+const DISCOVERED_TOP_TEXT_Y = .565;
+const DISCOVERED_BOTTOM_TEXT_Y = .645;
 
 function drawSidebar(ctx) {
     ctx.drawImage(SIDEBAR_BK, POND.width, 0);
 
     drawSidebarMoney(ctx);
     drawSidebarShopButton(ctx);
+    drawFishDiscovered(ctx);
 }
 
 function drawSidebarMoney(ctx) {
-    const SIDEBAR_MIDDLE_X = POND.width + (SIDEBAR_BK.width / 2);
+    const SIDEBAR_MIDDLE_X = POND.width + (SIDEBAR_BK.width / 2) + SIDEBAR_MIDDLE_X_OFFSET;
 
     drawSprite(ctx, MONEY_ICON, SIDEBAR_MIDDLE_X, ctx.canvas.height * MONEY_ICON_Y);
 
@@ -558,12 +593,31 @@ function drawSidebarMoney(ctx) {
 }
 
 function drawSidebarShopButton(ctx) {
-    const SIDEBAR_MIDDLE_X = POND.width + (SIDEBAR_BK.width / 2);
+    const SIDEBAR_MIDDLE_X = POND.width + (SIDEBAR_BK.width / 2) + SIDEBAR_MIDDLE_X_OFFSET;
     if (currentState === "placement" || currentState === "shop") {
         drawButton(ctx, mouseX, mouseY, SHOP_BUTTON, SIDEBAR_MIDDLE_X, SHOP_BUTTON_Y * ctx.canvas.height);
     } else {
         drawSprite(ctx, SHOP_BUTTON, SIDEBAR_MIDDLE_X, SHOP_BUTTON_Y * ctx.canvas.height);
     }
+}
+
+function drawFishDiscovered(ctx) {
+    const SIDEBAR_MIDDLE_X = POND.width + (SIDEBAR_BK.width / 2) + SIDEBAR_MIDDLE_X_OFFSET;
+
+    drawSprite(ctx, FISH_DISCOVERED, SIDEBAR_MIDDLE_X, FISH_DISCOVERED_Y * ctx.canvas.height);
+
+    ctx.fillStyle = "#ffffff";
+    ctx.textAlign = "center";
+    ctx.font = `800 ${MONEY_FONT_SIZE}px 'Courier New'`;
+    ctx.strokeStyle = "black";
+    ctx.lineWidth = MONEY_BORDER_SIZE;
+
+    ctx.fillText(`${fishDiscovered}`, SIDEBAR_MIDDLE_X, ctx.canvas.height * DISCOVERED_TOP_TEXT_Y);
+    ctx.strokeText(`${fishDiscovered}`, SIDEBAR_MIDDLE_X, ctx.canvas.height * DISCOVERED_TOP_TEXT_Y);
+
+    const TOTAL_FISH = Object.keys(FISH).length;
+    ctx.fillText(`${TOTAL_FISH}`, SIDEBAR_MIDDLE_X, ctx.canvas.height * DISCOVERED_BOTTOM_TEXT_Y);
+    ctx.strokeText(`${TOTAL_FISH}`, SIDEBAR_MIDDLE_X, ctx.canvas.height * DISCOVERED_BOTTOM_TEXT_Y);
 }
 
 // #endregion
@@ -691,14 +745,15 @@ function drawSuccess(ctx) {
 
     // money text
     let pulse = RESULT_MONEY_FONT_SIZE + Math.sin(animationTimer * RESULT_MONEY_SPEED) * RESULT_MONEY_AMPLITUDE;
+    let text = (isFishNew) ? `+$${fishBiting.worth}(NEW!)` : `+$${fishBiting.worth}`; 
 
     ctx.fillStyle = RESULT_MONEY_COLOR;
     ctx.strokeStyle = "#000000";
     ctx.lineWidth = RESULT_FISH_BORDER_SIZE;
 
     ctx.font = `bold ${pulse}px 'Courier New'`;
-    ctx.fillText(`+$${fishBiting.worth}`, ctx.canvas.width / 2, RESULT_MONEY_Y * ctx.canvas.height);
-    ctx.strokeText(`+$${fishBiting.worth}`, ctx.canvas.width / 2, RESULT_MONEY_Y * ctx.canvas.height);
+    ctx.fillText(text, ctx.canvas.width / 2, RESULT_MONEY_Y * ctx.canvas.height);
+    ctx.strokeText(text, ctx.canvas.width / 2, RESULT_MONEY_Y * ctx.canvas.height);
 
 }
 
