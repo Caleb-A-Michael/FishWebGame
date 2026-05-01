@@ -1,7 +1,10 @@
 import { update, draw } from "../scenes/sceneManager.js";
 import { resetInput } from "./input.js";
+import { initImages } from "../utils/assetLoading.js";
 
-export function startGameLoop(ctx) {
+export async function startGameLoop(ctx) {
+    await initImages();
+
     let lastTime = 0;
 
     function gameLoop(currentTime) {
